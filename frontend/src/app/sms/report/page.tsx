@@ -71,15 +71,24 @@ export default function AttendanceReportPage() {
     };
   });
 
-  const filteredReport = combinedReport.filter(stu =>
-    stu.name.toLowerCase().includes(search.toLowerCase()) ||
-    stu.user_id.toLowerCase().includes(search.toLowerCase()) ||
-    stu.roll_number.toLowerCase().includes(search.toLowerCase()) ||
-    (stu.dept_id && stu.dept_id.toLowerCase().includes(search.toLowerCase()))
-  );
+  const isStudent = currentUser?.role === 'STUDENT';
 
-  const presentCount = combinedReport.filter(s => s.hasLogged).length;
-  const absentCount = combinedReport.length - presentCount;
+  const filteredReport = combinedReport.filter(stu => {
+    if (isStudent && currentUser?.dept_id) {
+      const studentDept = (stu.dept_id || 'CSE').toUpperCase();
+      const userDept = currentUser.dept_id.toUpperCase();
+      if (studentDept !== userDept) return false;
+    }
+    return (
+      stu.name.toLowerCase().includes(search.toLowerCase()) ||
+      stu.user_id.toLowerCase().includes(search.toLowerCase()) ||
+      stu.roll_number.toLowerCase().includes(search.toLowerCase()) ||
+      (stu.dept_id && stu.dept_id.toLowerCase().includes(search.toLowerCase()))
+    );
+  });
+
+  const presentCount = filteredReport.filter(s => s.hasLogged).length;
+  const absentCount = filteredReport.length - presentCount;
 
   return (
     <div className="space-y-6">

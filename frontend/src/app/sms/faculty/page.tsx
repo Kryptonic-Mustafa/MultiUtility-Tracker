@@ -54,11 +54,18 @@ export default function FacultyPage() {
     } catch (e) {}
   };
 
-  const filtered = faculty.filter(f => 
-    f.name.toLowerCase().includes(search.toLowerCase()) ||
-    f.user_id.toLowerCase().includes(search.toLowerCase()) ||
-    f.designation.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = faculty.filter(f => {
+    if (isStudent && currentUser?.dept_id) {
+      const facultyDept = (f.dept_id || 'CSE').toUpperCase();
+      const userDept = currentUser.dept_id.toUpperCase();
+      if (facultyDept !== userDept) return false;
+    }
+    return (
+      f.name.toLowerCase().includes(search.toLowerCase()) ||
+      f.user_id.toLowerCase().includes(search.toLowerCase()) ||
+      f.designation.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   return (
     <div className="space-y-6">
