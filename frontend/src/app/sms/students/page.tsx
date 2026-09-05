@@ -54,11 +54,18 @@ export default function StudentsPage() {
     } catch (e) {}
   };
 
-  const filtered = students.filter(s => 
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.user_id.toLowerCase().includes(search.toLowerCase()) ||
-    s.roll_number.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = students.filter(s => {
+    if (isStudent && currentUser?.dept_id) {
+      const studentDept = (s.dept_id || 'CSE').toUpperCase();
+      const userDept = currentUser.dept_id.toUpperCase();
+      if (studentDept !== userDept) return false;
+    }
+    return (
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.user_id.toLowerCase().includes(search.toLowerCase()) ||
+      s.roll_number.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   return (
     <div className="space-y-6">
