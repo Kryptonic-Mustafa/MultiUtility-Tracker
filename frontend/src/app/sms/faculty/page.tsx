@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import RegisterUserModal from '@/components/RegisterUserModal';
 import { UserCheck, UserPlus, Search, Briefcase, Clock, Trash2, CheckCircle2, Shield } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export default function FacultyPage() {
+  const { showToast, confirmAction } = useToast();
   const [faculty, setFaculty] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -21,6 +23,7 @@ export default function FacultyPage() {
   }, []);
 
   const isStudent = currentUser?.role === 'STUDENT';
+  const canManage = currentUser?.role === 'ADMIN' || currentUser?.is_admin;
 
   const fetchFaculty = async () => {
     setLoading(true);
@@ -41,21 +44,35 @@ export default function FacultyPage() {
     fetchFaculty();
   }, []);
 
-  const handleDelete = async (userId: string) => {
-    if (isStudent) return;
-    if (!confirm(`Are you sure you want to delete faculty member ${userId}?`)) return;
-    try {
-      const res = await fetch(`http://${window.location.hostname}:8000/api/faculty/${userId}`, {
-        method: 'DELETE'
-      });
-      if (res.ok) {
-        fetchFaculty();
+  const handleDelete = (userId: string, name?: string) => {
+    if (!canManage) return;
+    confirmAction({
+      title: 'Delete Faculty Member',
+      message: `Are you sure you want to delete faculty member ${name ? `${name} (${userId})` : userId}? This action cannot be undone.`,
+      confirmText: 'Delete Faculty',
+      cancelText: 'Cancel',
+      type: 'danger',
+      icon: 'delete',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`http://${window.location.hostname}:8000/api/faculty/${userId}`, {
+            method: 'DELETE'
+          });
+          if (res.ok) {
+            showToast(`Faculty member ${userId} deleted successfully`, 'success');
+            fetchFaculty();
+          } else {
+            showToast(`Failed to delete faculty member ${userId}`, 'error');
+          }
+        } catch (e: any) {
+          showToast(e.message || 'Error deleting faculty member', 'error');
+        }
       }
-    } catch (e) {}
+    });
   };
 
   const filtered = faculty.filter(f => {
-    if (isStudent && currentUser?.dept_id) {
+    if (currentUser?.dept_id && currentUser?.dept_id !== 'ALL') {
       const facultyDept = (f.dept_id || 'CSE').toUpperCase();
       const userDept = currentUser.dept_id.toUpperCase();
       if (facultyDept !== userDept) return false;
@@ -75,16 +92,30 @@ export default function FacultyPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              Faculty & Staff Directory
+              {isStudent
+                ? 'My Teachers & HOD'
+                : canManage
+                ? `Department Admin (${currentUser?.dept_id || 'CSE'})`
+                : `Department Faculty (${currentUser?.dept_id || 'CSE'})`}
             </span>
           </div>
-          <h1 className="text-2xl font-black text-white">HODs, Teachers & Staff</h1>
+          <h1 className="text-2xl font-black text-white">
+            {isStudent
+              ? 'Department Faculty & HOD'
+              : canManage
+              ? `Manage Faculty & HOD (${currentUser?.dept_id || 'CSE'})`
+              : `Faculty & Teachers in ${currentUser?.dept_id || 'Department'}`}
+          </h1>
           <p className="text-xs text-gray-400">
-            {isStudent ? 'View institutional teachers, HODs, and faculty details' : 'Manage institutional personnel, designations, and biometric check-in shifts'}
+            {isStudent
+              ? 'View institutional teachers, HODs, and faculty details for your department'
+              : canManage
+              ? 'Register, manage, and update department teachers, HODs, and faculty biometrics'
+              : `View faculty members, designations, and shifts in ${currentUser?.dept_id || 'your department'}`}
           </p>
         </div>
 
-        {!isStudent && (
+        {canManage && (
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
@@ -119,7 +150,7 @@ export default function FacultyPage() {
           <p className="text-xs text-gray-400 max-w-sm mx-auto mb-4">
             No faculty or staff records match your search query.
           </p>
-          {!isStudent && (
+          {!canManage ? null : (
             <button
               onClick={() => setShowModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs shadow-lg"
@@ -158,9 +189,9 @@ export default function FacultyPage() {
                     </div>
                   </div>
 
-                  {!isStudent && (
+                  {canManage && (
                     <button
-                      onClick={() => handleDelete(f.user_id)}
+                      onClick={() => handleDelete(f.user_id, f.name)}
                       className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
                       title="Delete Faculty"
                     >

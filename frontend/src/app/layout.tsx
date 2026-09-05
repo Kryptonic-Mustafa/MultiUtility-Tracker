@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "MultiUtility Tracker | Enterprise School Management System",
@@ -15,10 +16,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-[#080c14] text-gray-100 flex flex-col selection:bg-indigo-500 selection:text-white">
-        <Navbar />
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8">
-          {children}
-        </main>
+        <Providers>
+          <Navbar />
+          <main className="flex-1 w-full max-w-[98%] xl:max-w-[1800px] mx-auto px-4 lg:px-8 py-6">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

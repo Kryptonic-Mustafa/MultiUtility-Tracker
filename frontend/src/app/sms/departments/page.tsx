@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Users, Shield, Sparkles } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export default function DepartmentsPage() {
+  const { showToast } = useToast();
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deptId, setDeptId] = useState('');
@@ -43,11 +45,17 @@ export default function DepartmentsPage() {
       });
 
       if (res.ok) {
+        showToast(`Department ${deptId} added successfully!`, 'success');
         setDeptId('');
         setDeptName('');
         fetchDepartments();
+      } else {
+        const data = await res.json();
+        showToast(data.detail || 'Failed to create department', 'error');
       }
-    } catch (e) {}
+    } catch (e: any) {
+      showToast(e.message || 'Error creating department', 'error');
+    }
   };
 
   return (

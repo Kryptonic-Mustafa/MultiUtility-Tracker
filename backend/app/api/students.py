@@ -18,13 +18,15 @@ def get_all_students(db: Session = Depends(get_db_sync)):
             "user_id": user.user_id,
             "name": user.name,
             "email": user.email,
-            "phone": getattr(user, 'phone', '') or getattr(detail, 'guardian_contact', ''),
+            "phone": getattr(user, 'phone', '') or getattr(detail, 'parent_contact', '') or getattr(detail, 'guardian_contact', ''),
             "dept_id": user.dept_id,
             "roll_number": detail.roll_number,
             "academic_year": detail.academic_year,
             "section": detail.section,
-            "guardian_name": detail.guardian_name,
-            "guardian_contact": detail.guardian_contact,
+            "parent_name": getattr(detail, 'parent_name', ''),
+            "parent_contact": getattr(detail, 'parent_contact', ''),
+            "guardian_name": getattr(detail, 'guardian_name', ''),
+            "guardian_contact": getattr(detail, 'guardian_contact', ''),
             "profile_image_url": user.profile_image_url,
             "created_at": user.created_at.isoformat() if user.created_at else None
         })

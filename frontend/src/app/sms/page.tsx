@@ -28,6 +28,7 @@ export default function SmsKioskPage() {
   }, []);
 
   const isStudent = currentUser?.role === 'STUDENT';
+  const canManage = currentUser?.role === 'ADMIN' || currentUser?.is_admin;
 
   const fetchRecentLogs = async () => {
     try {
@@ -55,7 +56,7 @@ export default function SmsKioskPage() {
   };
 
   const handleUnrecognized = (snapshot: string) => {
-    if (!isStudent) {
+    if (canManage) {
       setUnrecognizedSnapshot(snapshot);
     }
   };
@@ -89,7 +90,7 @@ export default function SmsKioskPage() {
           </p>
         </div>
 
-        {!isStudent && (
+        {canManage && (
           <button
             onClick={handleRegisterRedirect}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"

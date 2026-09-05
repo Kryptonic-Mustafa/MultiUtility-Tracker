@@ -4,10 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Shield, Camera, Users, UserCheck, Building2, Clock, LogOut, Grid, Sparkles, ChevronDown, User } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { showToast, confirmAction } = useToast();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -40,13 +42,28 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined' && !window.confirm('Do you want to logout?')) {
-      return;
-    }
-    localStorage.removeItem('multiutility_token');
-    localStorage.removeItem('multiutility_user');
-    setCurrentUser(null);
-    router.push('/sms/login');
+    const isAdminPath = pathname.startsWith('/admin');
+    
+    confirmAction({
+      title: 'Confirm Logout',
+      message: isAdminPath ? 'Are you sure you want to log out of Master Admin Panel?' : 'Are you sure you want to log out of MultiUtility Tracker?',
+      confirmText: 'Logout',
+      cancelText: 'Cancel',
+      type: 'danger',
+      icon: 'logout',
+      onConfirm: () => {
+        localStorage.removeItem('multiutility_token');
+        localStorage.removeItem('multiutility_user');
+        localStorage.removeItem('master_admin_user');
+        setCurrentUser(null);
+        showToast('Logged out successfully', 'info');
+        if (isAdminPath) {
+          window.location.href = '/admin/login';
+        } else {
+          router.push('/sms/login');
+        }
+      }
+    });
   };
 
   const isSmsModule = pathname.startsWith('/sms');
@@ -57,17 +74,17 @@ export default function Navbar() {
     <>
       {/* Top Navbar */}
       <nav className="sticky top-0 z-40 w-full glass-panel border-b border-white/10 px-4 lg:px-8 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="w-full max-w-[98%] xl:max-w-[1800px] mx-auto flex items-center justify-between gap-4">
           
           {/* Brand Logo & Title */}
-          <Link href="/modules" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 p-[1px] shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+          <Link href="/modules" className="flex items-center gap-3 group shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 p-[1px] shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform shrink-0">
               <div className="w-full h-full bg-dark-card rounded-[11px] flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-indigo-400" />
               </div>
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 whitespace-nowrap">
                 <span className="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-indigo-300">
                   MultiUtility Tracker
                 </span>
@@ -75,7 +92,7 @@ export default function Navbar() {
                   v1.0
                 </span>
               </div>
-              <p className="text-xs text-gray-400 flex items-center gap-1">
+              <p className="text-xs text-gray-400 flex items-center gap-1 whitespace-nowrap">
                 Module 1: <span className="text-indigo-400 font-medium">School Management (SMS)</span>
               </p>
             </div>
@@ -120,7 +137,7 @@ export default function Navbar() {
                 Faculty & Staff
               </Link>
 
-              {currentUser.role !== 'STUDENT' && (
+              {(currentUser.role === 'ADMIN' || currentUser.is_admin) && (
                 <Link
                   href="/sms/departments"
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -134,7 +151,7 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {currentUser.role !== 'STUDENT' && (
+              {(currentUser.role === 'ADMIN' || currentUser.is_admin) && (
                 <Link
                   href="/sms/logs"
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -217,11 +234,11 @@ export default function Navbar() {
 
                 {/* Profile Dropdown Menu */}
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 glass-panel rounded-2xl border border-white/10 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="px-3 py-2.5 mb-1 border-b border-white/10 bg-white/5 rounded-xl">
+                  <div className="absolute right-0 mt-2 w-60 bg-[#0f172a] border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/90 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-3.5 py-3 mb-1.5 border-b border-slate-700/60 bg-slate-800/80 rounded-xl">
                       <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
                       <p className="text-[10px] font-mono text-gray-400 truncate">{currentUser.user_id}</p>
-                      <div className="mt-1 flex items-center gap-1.5">
+                      <div className="mt-1.5 flex items-center gap-1.5">
                         <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                           {currentUser.role || 'USER'}
                         </span>
@@ -233,11 +250,22 @@ export default function Navbar() {
                       <Link
                         href="/sms/profile"
                         onClick={() => setMenuOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-200 hover:text-white hover:bg-slate-800 transition-colors"
                       >
                         <User className="w-4 h-4 text-indigo-400" />
                         <span>My Profile</span>
                       </Link>
+
+                      {(currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN' || currentUser.is_admin) && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setMenuOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-300 hover:text-white hover:bg-purple-600/20 transition-colors"
+                        >
+                          <Shield className="w-4 h-4 text-purple-400" />
+                          <span>Master Admin Panel</span>
+                        </Link>
+                      )}
 
                       <button
                         type="button"
@@ -245,7 +273,7 @@ export default function Navbar() {
                           setMenuOpen(false);
                           handleLogout();
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
                       >
                         <LogOut className="w-4 h-4 text-rose-400" />
                         <span>Logout</span>
@@ -302,7 +330,7 @@ export default function Navbar() {
             <span>Faculty</span>
           </Link>
 
-          {currentUser.role !== 'STUDENT' && (
+          {(currentUser.role === 'ADMIN' || currentUser.is_admin) && (
             <Link
               href="/sms/departments"
               className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
@@ -314,7 +342,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          {currentUser.role !== 'STUDENT' ? (
+          {(currentUser.role === 'ADMIN' || currentUser.is_admin) && (
             <Link
               href="/sms/logs"
               className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
@@ -324,17 +352,17 @@ export default function Navbar() {
               <Clock className="w-5 h-5" />
               <span>Logs</span>
             </Link>
-          ) : (
-            <Link
-              href="/sms/report"
-              className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
-                pathname === '/sms/report' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <Clock className="w-5 h-5" />
-              <span>Report</span>
-            </Link>
           )}
+
+          <Link
+            href="/sms/report"
+            className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
+              pathname === '/sms/report' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Clock className="w-5 h-5" />
+            <span>Report</span>
+          </Link>
 
           <Link
             href="/modules"

@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Search, CheckCircle2, AlertCircle, XCircle, Users, GraduationCap } from 'lucide-react';
+import { Clock, Calendar, Search, CheckCircle2, XCircle, AlertCircle, GraduationCap, UserCheck, UserX, RotateCcw, Shield } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export default function AttendanceReportPage() {
+  const { showToast } = useToast();
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [students, setStudents] = useState<any[]>([]);
   const [attendanceLogs, setAttendanceLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -19,6 +22,13 @@ export default function AttendanceReportPage() {
       } catch (e) {}
     }
   }, []);
+
+  const canMarkAttendance =
+    currentUser?.role === 'TEACHER' ||
+    currentUser?.role === 'SUB_TEACHER' ||
+    currentUser?.role === 'HOD' ||
+    currentUser?.role === 'ADMIN' ||
+    currentUser?.is_admin;
 
   const fetchData = async () => {
     setLoading(true);
@@ -32,7 +42,7 @@ export default function AttendanceReportPage() {
       }
 
       // Fetch attendance logs for selected date
-      const logRes = await fetch(`http://${window.location.hostname}:8000/api/attendance/logs?limit=200`);
+      const logRes = await fetch(`http://${window.location.hostname}:8000/api/attendance/logs?limit=500`);
       if (logRes.ok) {
         const logData = await logRes.json();
         
@@ -56,17 +66,59 @@ export default function AttendanceReportPage() {
     fetchData();
   }, [selectedDate]);
 
-  // Combine student details with their check-in status for the selected date
+  const handleMarkAttendance = async (userId: string, name: string, status: 'PRESENT' | 'ABSENT' | 'NOT_LOGGED_IN') => {
+    setUpdatingUserId(userId);
+    try {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/attendance/mark`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          status,
+          date_str: selectedDate,
+          marked_by: currentUser?.name ? `${currentUser.name} (${currentUser.role})` : currentUser?.role
+        })
+      });
+
+      if (res.ok) {
+        if (status === 'ABSENT') {
+          showToast(`Student ${name} (${userId}) marked as Absent`, 'error', 'Student Marked Absent');
+        } else if (status === 'PRESENT') {
+          showToast(`Student ${name} (${userId}) marked as Present`, 'success', 'Student Marked Present');
+        } else {
+          showToast(`Attendance status reset for ${name} (${userId})`, 'info', 'Attendance Status Reset');
+        }
+        fetchData();
+      } else {
+        const data = await res.json();
+        showToast(data.detail || 'Failed to update attendance status', 'error', 'Error');
+      }
+    } catch (e: any) {
+      showToast(e.message || 'Error updating attendance status', 'error');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  // Combine student details with check-in status
   const combinedReport = students.map((stu) => {
-    // Find matching attendance log for this student on selectedDate
     const studentLogs = attendanceLogs.filter((log) => log.user_id === stu.user_id);
-    const hasLogged = studentLogs.length > 0;
-    const latestLog = hasLogged ? studentLogs[0] : null;
+    const latestLog = studentLogs.length > 0 ? studentLogs[0] : null;
+
+    let status: 'PRESENT' | 'ABSENT' | 'NOT_LOGGED_IN' = 'NOT_LOGGED_IN';
+    if (latestLog) {
+      if (latestLog.entry_type === 'ABSENT') {
+        status = 'ABSENT';
+      } else {
+        status = 'PRESENT';
+      }
+    }
 
     return {
       ...stu,
-      hasLogged,
-      logTime: latestLog ? new Date(latestLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
+      status,
+      logTime: latestLog && status === 'PRESENT' ? new Date(latestLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
+      deviceInfo: latestLog ? latestLog.device_info : null,
       confidence: latestLog ? latestLog.confidence_score : null
     };
   });
@@ -87,8 +139,9 @@ export default function AttendanceReportPage() {
     );
   });
 
-  const presentCount = filteredReport.filter(s => s.hasLogged).length;
-  const absentCount = filteredReport.length - presentCount;
+  const presentCount = filteredReport.filter(s => s.status === 'PRESENT').length;
+  const absentCount = filteredReport.filter(s => s.status === 'ABSENT').length;
+  const notLoggedCount = filteredReport.filter(s => s.status === 'NOT_LOGGED_IN').length;
 
   return (
     <div className="space-y-6">
@@ -98,11 +151,15 @@ export default function AttendanceReportPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              Student Attendance Report
+              Student Attendance Report & Marking
             </span>
           </div>
-          <h1 className="text-2xl font-black text-white">Daily Class Attendance Status</h1>
-          <p className="text-xs text-gray-400">Day-wise check-in logs and attendance status for your batchmates</p>
+          <h1 className="text-2xl font-black text-white">Daily Class Attendance Register</h1>
+          <p className="text-xs text-gray-400">
+            {canMarkAttendance
+              ? 'Mark students Present or Absent manually, or view automated face kiosk check-ins.'
+              : 'Day-wise check-in logs and attendance status for your batchmates.'}
+          </p>
         </div>
 
         {/* Date Selector & Metrics */}
@@ -122,7 +179,11 @@ export default function AttendanceReportPage() {
           </div>
 
           <div className="flex items-center gap-2 px-3.5 py-2 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs font-bold text-rose-400">
-            <span>Not Logged: {absentCount}</span>
+            <span>Absent: {absentCount}</span>
+          </div>
+
+          <div className="flex items-center gap-2 px-3.5 py-2 bg-gray-800 border border-white/10 rounded-xl text-xs font-bold text-gray-300">
+            <span>Not Logged: {notLoggedCount}</span>
           </div>
         </div>
       </div>
@@ -161,74 +222,154 @@ export default function AttendanceReportPage() {
                   <th className="py-3.5 px-5">Student</th>
                   <th className="py-3.5 px-4">Roll Number</th>
                   <th className="py-3.5 px-4">Dept / Class</th>
-                  <th className="py-3.5 px-4">Attendance Status</th>
+                  <th className="py-3.5 px-4">Current Status</th>
+                  {canMarkAttendance && <th className="py-3.5 px-5 text-center">Mark Attendance (Teacher)</th>}
                   <th className="py-3.5 px-4">Check-In Time</th>
-                  <th className="py-3.5 px-5 text-right">Confidence</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredReport.map((stu) => (
-                  <tr key={stu.user_id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3.5 px-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-800 border border-white/10 flex-shrink-0">
-                          {stu.profile_image_url ? (
-                            <img src={stu.profile_image_url} alt={stu.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-indigo-500/10 text-indigo-400 font-bold text-xs">
-                              {stu.name[0]}
-                            </div>
-                          )}
+                {filteredReport.map((stu) => {
+                  const isUpdating = updatingUserId === stu.user_id;
+
+                  return (
+                    <tr key={stu.user_id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3.5 px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-800 border border-white/10 flex-shrink-0">
+                            {stu.profile_image_url ? (
+                              <img src={stu.profile_image_url} alt={stu.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-indigo-500/10 text-indigo-400 font-bold text-xs">
+                                {stu.name[0]}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-white leading-tight">{stu.name}</p>
+                            <p className="text-[10px] text-gray-400 font-mono">ID: {stu.user_id}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-white leading-tight">{stu.name}</p>
-                          <p className="text-[10px] text-gray-400 font-mono">ID: {stu.user_id}</p>
-                        </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="py-3.5 px-4 font-mono font-bold text-indigo-300">
-                      {stu.roll_number || 'N/A'}
-                    </td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-indigo-300">
+                        {stu.roll_number || 'N/A'}
+                      </td>
 
-                    <td className="py-3.5 px-4 text-gray-300">
-                      {stu.dept_id || 'CSE'} • Yr {stu.academic_year} ({stu.section})
-                    </td>
+                      <td className="py-3.5 px-4 text-gray-300">
+                        {stu.dept_id || 'CSE'} • Yr {stu.academic_year} (Div {stu.section})
+                      </td>
 
-                    <td className="py-3.5 px-4">
-                      {stu.hasLogged ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          LOGGED & PRESENT
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-800 text-gray-400 border border-white/5">
-                          <XCircle className="w-3.5 h-3.5 text-gray-500" />
-                          NOT CHECKED IN
-                        </span>
+                      <td className="py-3.5 px-4">
+                        {stu.status === 'PRESENT' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            PRESENT
+                          </span>
+                        ) : stu.status === 'ABSENT' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                            <XCircle className="w-3.5 h-3.5" />
+                            ABSENT
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-800 text-gray-400 border border-white/5">
+                            <AlertCircle className="w-3.5 h-3.5 text-gray-500" />
+                            NOT LOGGED IN
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Teacher Interactive Marking Buttons */}
+                      {canMarkAttendance && (
+                        <td className="py-3.5 px-5">
+                          <div className="flex items-center justify-center gap-2 bg-dark-bg/60 p-1 rounded-xl border border-white/10 w-fit mx-auto">
+                            {/* If currently PRESENT: allow teacher to Mark Absent or Reset */}
+                            {stu.status === 'PRESENT' && (
+                              <>
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={() => handleMarkAttendance(stu.user_id, stu.name, 'ABSENT')}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 flex items-center gap-1.5 transition-all"
+                                  title="Mark Student as Absent"
+                                >
+                                  <UserX className="w-3.5 h-3.5" />
+                                  Mark Absent
+                                </button>
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={() => handleMarkAttendance(stu.user_id, stu.name, 'NOT_LOGGED_IN')}
+                                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white border border-white/5 flex items-center gap-1 transition-all"
+                                  title="Reset to Not Logged In"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  Reset
+                                </button>
+                              </>
+                            )}
+
+                            {/* If currently ABSENT: allow teacher to Mark Present or Reset */}
+                            {stu.status === 'ABSENT' && (
+                              <>
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={() => handleMarkAttendance(stu.user_id, stu.name, 'PRESENT')}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5 transition-all"
+                                  title="Mark Student as Present"
+                                >
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                  Mark Present
+                                </button>
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={() => handleMarkAttendance(stu.user_id, stu.name, 'NOT_LOGGED_IN')}
+                                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white border border-white/5 flex items-center gap-1 transition-all"
+                                  title="Reset to Not Logged In"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  Reset
+                                </button>
+                              </>
+                            )}
+
+                            {/* If NOT LOGGED IN: allow teacher to Mark Present or Mark Absent */}
+                            {stu.status === 'NOT_LOGGED_IN' && (
+                              <>
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={() => handleMarkAttendance(stu.user_id, stu.name, 'PRESENT')}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5 transition-all"
+                                  title="Mark Student as Present"
+                                >
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                  Present
+                                </button>
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={() => handleMarkAttendance(stu.user_id, stu.name, 'ABSENT')}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 flex items-center gap-1.5 transition-all"
+                                  title="Mark Student as Absent"
+                                >
+                                  <UserX className="w-3.5 h-3.5" />
+                                  Absent
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
                       )}
-                    </td>
 
-                    <td className="py-3.5 px-4 font-mono text-gray-300">
-                      {stu.hasLogged ? (
-                        <span className="flex items-center gap-1 text-emerald-300">
-                          <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                          {stu.logTime}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">—</span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-5 text-right font-mono font-bold text-gray-300">
-                      {stu.hasLogged && stu.confidence ? (
-                        <span className="text-indigo-400">{(stu.confidence * 100).toFixed(1)}%</span>
-                      ) : (
-                        <span className="text-gray-600">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      <td className="py-3.5 px-4 font-mono text-gray-300">
+                        {stu.logTime ? (
+                          <span className="flex items-center gap-1 text-emerald-300">
+                            <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                            {stu.logTime}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

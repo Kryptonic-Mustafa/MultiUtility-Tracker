@@ -25,7 +25,8 @@ export default function SmsLayout({ children }: { children: React.ReactNode }) {
     if (token && user) {
       try {
         const parsedUser = JSON.parse(user);
-        if (parsedUser.role === 'STUDENT') {
+        const isSuperOrDeptAdmin = parsedUser.role === 'ADMIN' || parsedUser.is_admin;
+        if (!isSuperOrDeptAdmin) {
           if (pathname === '/sms/departments') {
             router.replace('/sms');
             return;

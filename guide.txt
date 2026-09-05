@@ -1,0 +1,94 @@
+================================================================================
+          MULTIUTILITY TRACKER - ENTERPRISE MANAGEMENT SYSTEM
+                         COMPLETE RUNNING GUIDE
+================================================================================
+
+Overview:
+MultiUtility Tracker is an Enterprise Institutional & Student Tracker System featuring:
+ - Biometric Real-time AI Face Recognition Attendance (Webcam Kiosk)
+ - Departmental Access Control (Super Admin, Dept Admin, HOD, Teacher, Student, Principal)
+ - Multi-Module Management (Students, Faculty, Departments, Attendance Logs, Master Divs)
+ - Modern Dark Glassmorphic UI with custom Toast Notifications & Confirmation Dialogs
+
+--------------------------------------------------------------------------------
+PREREQUISITES
+--------------------------------------------------------------------------------
+1. Python 3.10+ installed
+2. Node.js 18+ & npm installed
+3. MySQL Database running (Local or Remote) with connection settings in `.env`
+
+--------------------------------------------------------------------------------
+WAY 1: ALL-IN-ONE DESKTOP LAUNCHER (RECOMMENDED FOR QUICK RUN & DESKTOP MODE)
+--------------------------------------------------------------------------------
+Purpose: 
+  Automatically starts the FastAPI backend and Next.js frontend in parallel, 
+  waits for services to become online, and opens the application in a standalone
+  Chrome App desktop window (or standard browser fallback).
+
+Command (from project root):
+  python desktop/launcher.py
+
+What it does:
+  - Starts FastAPI Backend on http://localhost:8000
+  - Starts Next.js Frontend on http://localhost:3000
+  - Launches Chrome in standalone window mode (`--app=http://localhost:3000`)
+
+--------------------------------------------------------------------------------
+WAY 2: INDIVIDUAL SERVICES (RECOMMENDED FOR WEB DEVELOPERS & DEBUGGING)
+--------------------------------------------------------------------------------
+Purpose:
+  Run backend and frontend independently in separate terminal windows to inspect
+  detailed server logs, API endpoints, or work on UI code with hot-reloading.
+
+Step A: Start Backend Server (FastAPI)
+  Terminal 1 (from project root):
+    python -m uvicorn backend.app.main:app --reload --port 8000
+
+  - API Server: http://localhost:8000
+  - Interactive Swagger API Documentation: http://localhost:8000/docs
+  - OpenAPI Specification: http://localhost:8000/openapi.json
+
+Step B: Start Frontend Web Server (Next.js)
+  Terminal 2 (from project root):
+    cd frontend
+    npm run dev
+
+  - Web Application URL: http://localhost:3000
+
+--------------------------------------------------------------------------------
+WAY 3: SEEDING & RESETTING TEST DATA
+--------------------------------------------------------------------------------
+Purpose:
+  Populate the database with pre-configured sample departments, HODs, admins, 
+  principals, teachers, and students for testing logins and features.
+
+Command (from project root):
+  python scripts/seed_demo_data.py
+
+Test Accounts & Passwords:
+  Refer to `TEST_ACCOUNTS.txt` in the root folder for a list of all pre-seeded accounts:
+  - Super Admin: admin / password
+  - CSE Department Admin: cseadmin / password
+  - CSE HOD: csehod / password
+  - CSE Principal: cseprincipal / password
+  - College Principal: principal / password
+  - CSE Teachers: TCH-201, TCH-202, TCH-203 / password
+  - CSE Students: STU-501, STU-502, STU-503, STU-504 / password
+
+--------------------------------------------------------------------------------
+WAY 4: PRODUCTION BUILD & HOSTING (FOR DEPLOYMENT / WEBSITE)
+--------------------------------------------------------------------------------
+Purpose:
+  Build optimized static production assets and run production-grade web servers.
+
+1. Build Frontend Bundle:
+   cd frontend
+   npm run build
+
+2. Start Production Frontend Server:
+   npm start -p 3000
+
+3. Start Production FastAPI Backend:
+   python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+================================================================================
