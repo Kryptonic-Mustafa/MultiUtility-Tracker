@@ -23,6 +23,20 @@ export default function SmsLayout({ children }: { children: React.ReactNode }) {
     const user = localStorage.getItem('multiutility_user');
 
     if (token && user) {
+      try {
+        const parsedUser = JSON.parse(user);
+        if (parsedUser.role === 'STUDENT') {
+          if (pathname === '/sms/departments') {
+            router.replace('/sms');
+            return;
+          }
+          if (pathname === '/sms/logs') {
+            router.replace('/sms/report');
+            return;
+          }
+        }
+      } catch (e) {}
+
       setIsAuthenticated(true);
       setIsChecking(false);
     } else {

@@ -9,6 +9,18 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('multiutility_user');
+    if (saved) {
+      try {
+        setCurrentUser(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
+
+  const isStudent = currentUser?.role === 'STUDENT';
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -30,6 +42,7 @@ export default function StudentsPage() {
   }, []);
 
   const handleDelete = async (userId: string) => {
+    if (isStudent) return;
     if (!confirm(`Are you sure you want to delete student ${userId}?`)) return;
     try {
       const res = await fetch(`http://${window.location.hostname}:8000/api/students/${userId}`, {
@@ -55,20 +68,26 @@ export default function StudentsPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-              Student Directory
+              {isStudent ? 'My Batchmates' : 'Student Directory'}
             </span>
           </div>
-          <h1 className="text-2xl font-black text-white">Registered Students</h1>
-          <p className="text-xs text-gray-400">View and manage enrolled students with biometric encodings</p>
+          <h1 className="text-2xl font-black text-white">
+            {isStudent ? 'Batchmates & Classmates' : 'Registered Students'}
+          </h1>
+          <p className="text-xs text-gray-400">
+            {isStudent ? 'View your class batchmates and student profiles' : 'View and manage enrolled students with biometric encodings'}
+          </p>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Add New Student</span>
-        </button>
+        {!isStudent && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add New Student</span>
+          </button>
+        )}
       </div>
 
       {/* Search Filter */}
@@ -93,15 +112,17 @@ export default function StudentsPage() {
           <GraduationCap className="w-12 h-12 text-gray-600 mx-auto mb-3" />
           <h4 className="text-base font-bold text-white mb-1">No Students Found</h4>
           <p className="text-xs text-gray-400 max-w-sm mx-auto mb-4">
-            No student records match your search query or no students have been registered yet.
+            No student records match your search query.
           </p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs shadow-lg"
-          >
-            <UserPlus className="w-4 h-4" />
-            Register Student
-          </button>
+          {!isStudent && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs shadow-lg"
+            >
+              <UserPlus className="w-4 h-4" />
+              Register Student
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -125,13 +146,15 @@ export default function StudentsPage() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleDelete(s.user_id)}
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
-                    title="Delete Student"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {!isStudent && (
+                    <button
+                      onClick={() => handleDelete(s.user_id)}
+                      className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                      title="Delete Student"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-1.5 text-xs text-gray-300 bg-dark-bg/40 p-3 rounded-xl border border-white/5 mb-3">
