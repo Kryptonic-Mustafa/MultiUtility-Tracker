@@ -39,7 +39,7 @@ export default function MasterAdminPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const saved = localStorage.getItem('multiutility_user') || localStorage.getItem('master_admin_user');
+    const saved = localStorage.getItem('master_admin_session');
     if (saved) {
       try {
         const u = JSON.parse(saved);
@@ -70,9 +70,8 @@ export default function MasterAdminPage() {
       type: 'danger',
       icon: 'logout',
       onConfirm: () => {
-        localStorage.removeItem('multiutility_user');
-        localStorage.removeItem('master_admin_user');
-        localStorage.removeItem('multiutility_token');
+        localStorage.removeItem('master_admin_session');
+        localStorage.removeItem('master_admin_token');
         showToast('Logged out from Master Admin Panel', 'info', 'Admin Logout');
         window.location.href = '/admin/login';
       }

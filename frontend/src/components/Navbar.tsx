@@ -16,7 +16,9 @@ export default function Navbar() {
 
   useEffect(() => {
     const syncUser = () => {
-      const saved = localStorage.getItem('multiutility_user');
+      const isAdminPath = pathname.startsWith('/admin');
+      const savedKey = isAdminPath ? 'master_admin_session' : 'multiutility_user';
+      const saved = localStorage.getItem(savedKey) || localStorage.getItem('multiutility_user') || localStorage.getItem('master_admin_session');
       if (saved) {
         try {
           setCurrentUser(JSON.parse(saved));
@@ -52,14 +54,17 @@ export default function Navbar() {
       type: 'danger',
       icon: 'logout',
       onConfirm: () => {
-        localStorage.removeItem('multiutility_token');
-        localStorage.removeItem('multiutility_user');
-        localStorage.removeItem('master_admin_user');
-        setCurrentUser(null);
-        showToast('Logged out successfully', 'info');
         if (isAdminPath) {
+          localStorage.removeItem('master_admin_session');
+          localStorage.removeItem('master_admin_token');
+          setCurrentUser(null);
+          showToast('Logged out from Master Admin Panel', 'info', 'Admin Logout');
           window.location.href = '/admin/login';
         } else {
+          localStorage.removeItem('multiutility_token');
+          localStorage.removeItem('multiutility_user');
+          setCurrentUser(null);
+          showToast('Logged out successfully', 'info');
           router.push('/sms/login');
         }
       }
