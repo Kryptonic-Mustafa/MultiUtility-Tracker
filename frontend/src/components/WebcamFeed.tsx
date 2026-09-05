@@ -14,7 +14,7 @@ export default function WebcamFeed({ isActive = false, onStatusUpdate, onUnrecog
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   
-  const [manualPower, setManualPower] = useState(false); // Default OFF per user request
+  const [manualPower, setManualPower] = useState(isActive); // Controlled by user toggle (default OFF when isActive=false)
   const [isStreaming, setIsStreaming] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -24,6 +24,12 @@ export default function WebcamFeed({ isActive = false, onStatusUpdate, onUnrecog
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const frameCountRef = useRef(0);
   const lastFpsCalcRef = useRef(Date.now());
+
+  useEffect(() => {
+    setManualPower(isActive);
+  }, [isActive]);
+
+  const isEffectiveActive = manualPower;
 
   // Stop camera tracks cleanly
   const stopCamera = () => {
@@ -70,8 +76,6 @@ export default function WebcamFeed({ isActive = false, onStatusUpdate, onUnrecog
       setIsStreaming(false);
     }
   };
-
-  const isEffectiveActive = isActive && manualPower;
 
   // Manage Camera & WebSocket Lifecycle based on effective active state
   useEffect(() => {
