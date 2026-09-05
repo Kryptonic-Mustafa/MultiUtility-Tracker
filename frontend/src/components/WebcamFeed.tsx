@@ -4,11 +4,12 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Camera, CameraOff, RefreshCw, Activity } from 'lucide-react';
 
 interface WebcamFeedProps {
+  isActive?: boolean;
   onStatusUpdate?: (data: any) => void;
   onUnrecognized?: (snapshot: string, bbox: any) => void;
 }
 
-export default function WebcamFeed({ onStatusUpdate, onUnrecognized }: WebcamFeedProps) {
+export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecognized }: WebcamFeedProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -19,94 +20,108 @@ export default function WebcamFeed({ onStatusUpdate, onUnrecognized }: WebcamFee
   const [fps, setFps] = useState(0);
 
   const socketRef = useRef<WebSocket | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const frameCountRef = useRef(0);
-  const lastFpsCalcRef = useRef(timeNow());
+  const lastFpsCalcRef = useRef(Date.now());
 
-  function timeNow() {
-    return Date.now();
-  }
+  const stopCamera = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => {
+        track.stop();
+      });
+      mediaStreamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsStreaming(false);
 
-  // Initialize camera
+    if (overlayCanvasRef.current) {
+      const ctx = overlayCanvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height);
+      }
+    }
+  };
+
   const startCamera = async () => {
     setErrorMsg(null);
     try {
+      stopCamera();
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
         audio: false
       });
+
+      mediaStreamRef.current = stream;
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
         setIsStreaming(true);
       }
     } catch (err: any) {
-      console.error("Camera access error:", err);
-      setErrorMsg("Camera access denied or device not found. Please enable permissions.");
+      console.error('Camera access error:', err);
+      setErrorMsg('Camera access denied or device not found. Please enable permissions.');
       setIsStreaming(false);
     }
   };
 
-  // Connect WebSocket
   useEffect(() => {
-    const wsUrl = `ws://${window.location.hostname}:8000/ws/attendance`;
-    console.log("Connecting WebSocket to:", wsUrl);
+    if (!isActive) {
+      stopCamera();
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+        setWsConnected(false);
+      }
+      return;
+    }
 
+    const wsUrl = `ws://${window.location.hostname}:8000/ws/attendance`;
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
 
-    ws.onopen = () => {
-      console.log("WebSocket connected.");
-      setWsConnected(true);
-    };
+    ws.onopen = () => setWsConnected(true);
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         if (onStatusUpdate) onStatusUpdate(data);
 
-        // Draw bounding box if present
         drawBoundingBox(data.bbox, data.status);
 
-        // Trigger unrecognized modal prompt
         if (data.status === 'UNRECOGNIZED' && onUnrecognized && data.snapshot) {
           onUnrecognized(data.snapshot, data.bbox);
         }
-      } catch (err) {
-        console.error("WS message parse error:", err);
-      }
+      } catch (err) {}
     };
 
-    ws.onerror = (err) => {
-      console.error("WS error:", err);
-      setWsConnected(false);
-    };
-
-    ws.onclose = () => {
-      console.log("WS closed.");
-      setWsConnected(false);
-    };
+    ws.onerror = () => setWsConnected(false);
+    ws.onclose = () => setWsConnected(false);
 
     startCamera();
 
     return () => {
+      stopCamera();
       if (ws) ws.close();
     };
-  }, []);
+  }, [isActive]);
 
-  // Frame Capture & Transmission Loop
   useEffect(() => {
     let intervalId: any;
 
-    if (isStreaming && wsConnected) {
+    if (isActive && isStreaming && wsConnected) {
       intervalId = setInterval(() => {
         captureAndSendFrame();
-      }, 100); // 10 FPS send rate is optimal for real-time recognition without network overload
+      }, 100);
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isStreaming, wsConnected]);
+  }, [isActive, isStreaming, wsConnected]);
 
   const captureAndSendFrame = () => {
     if (!videoRef.current || !canvasRef.current || !socketRef.current) return;
@@ -123,12 +138,10 @@ export default function WebcamFeed({ onStatusUpdate, onUnrecognized }: WebcamFee
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const frameBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
     socketRef.current.send(JSON.stringify({ frame: frameBase64 }));
 
-    // FPS Counter
     frameCountRef.current += 1;
-    const now = timeNow();
+    const now = Date.now();
     if (now - lastFpsCalcRef.current >= 1000) {
       setFps(frameCountRef.current);
       frameCountRef.current = 0;
@@ -146,9 +159,8 @@ export default function WebcamFeed({ onStatusUpdate, onUnrecognized }: WebcamFee
     canvas.height = videoRef.current.videoHeight || 480;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!bbox) return;
+    if (!bbox || !isActive) return;
 
-    // Scale bbox coordinates from 480x360 canvas back to video resolution
     const scaleX = canvas.width / 480;
     const scaleY = canvas.height / 360;
 
@@ -170,47 +182,36 @@ export default function WebcamFeed({ onStatusUpdate, onUnrecognized }: WebcamFee
 
   return (
     <div className="relative rounded-2xl overflow-hidden bg-black/80 border border-white/10 shadow-2xl aspect-video flex items-center justify-center group">
-      
-      {/* Offscreen hidden capture canvas */}
       <canvas ref={canvasRef} className="hidden" />
+      <video ref={videoRef} playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
+      <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none transform -scale-x-100" />
 
-      {/* HTML5 Live Video Element */}
-      <video
-        ref={videoRef}
-        playsInline
-        muted
-        className="w-full h-full object-cover transform -scale-x-100"
-      />
-
-      {/* Bounding Box Canvas Overlay */}
-      <canvas
-        ref={overlayCanvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none transform -scale-x-100"
-      />
-
-      {/* Top Status Bar */}
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-white">
-          <span className={`w-2.5 h-2.5 rounded-full ${wsConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-          {wsConnected ? 'WebSocket Active' : 'Connecting Engine...'}
+          <span className={`w-2.5 h-2.5 rounded-full ${isActive && wsConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+          {isActive ? (wsConnected ? 'WebSocket Active' : 'Connecting Engine...') : 'Camera Standby'}
         </div>
 
         <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-gray-300">
           <Activity className="w-3.5 h-3.5 text-indigo-400" />
-          <span>{fps} FPS</span>
+          <span>{isActive ? `${fps} FPS` : 'Standby'}</span>
         </div>
       </div>
 
-      {/* Error state display */}
-      {errorMsg && (
+      {!isActive && (
+        <div className="absolute inset-0 bg-dark-bg/90 flex flex-col items-center justify-center p-6 text-center z-20">
+          <CameraOff className="w-12 h-12 text-indigo-400 mb-2" />
+          <h4 className="text-sm font-bold text-white mb-1">Camera Standby Mode</h4>
+          <p className="text-xs text-gray-400">Camera hardware turns off during user registration.</p>
+        </div>
+      )}
+
+      {isActive && errorMsg && (
         <div className="absolute inset-0 bg-dark-bg/95 flex flex-col items-center justify-center p-6 text-center z-20">
           <CameraOff className="w-12 h-12 text-red-400 mb-3 animate-bounce" />
           <h4 className="text-lg font-bold text-white mb-1">Camera Offline</h4>
           <p className="text-xs text-gray-400 mb-4 max-w-md">{errorMsg}</p>
-          <button
-            onClick={startCamera}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg transition-all"
-          >
+          <button onClick={startCamera} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg transition-all">
             <RefreshCw className="w-4 h-4" />
             Retry Camera Access
           </button>
