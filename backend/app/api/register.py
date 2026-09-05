@@ -1,15 +1,18 @@
 import json
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
 
 from backend.app.core.db import get_db_sync
 from backend.app.core.face_engine import face_engine
 from backend.app.models.db_models import UserModel, StudentDetailModel, FacultyDetailModel
 
 router = APIRouter(prefix="/api/register", tags=["Register"])
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    pwd_bytes = password.encode('utf-8')[:72]
+    return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode('utf-8')
 
 class RegisterUserRequest(BaseModel):
     user_id: str
@@ -35,7 +38,6 @@ class RegisterUserRequest(BaseModel):
 
 @router.post("/user")
 def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
-    # Check if user_id exists
     existing = db.query(UserModel).filter(UserModel.user_id == req.user_id).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"User ID '{req.user_id}' already exists.")
@@ -51,7 +53,8 @@ def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
             detail="No face detected in image. Please take a clear face photo."
         )
 
-    hashed_pwd = pwd_context.hash("password")
+    # Clean direct bcrypt hashing
+    hashed_pwd = hash_password("password")
 
     new_user = UserModel(
         user_id=req.user_id.strip(),
