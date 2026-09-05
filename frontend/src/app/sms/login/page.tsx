@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UserCheck, UserPlus, Lock, User, ArrowRight, KeyRound, AlertCircle, Sparkles, GraduationCap, Briefcase, Camera, Upload, CheckCircle2, Loader2, RefreshCw, X, CameraOff } from 'lucide-react';
+import { UserCheck, UserPlus, Lock, User, ArrowRight, KeyRound, AlertCircle, Sparkles, GraduationCap, Briefcase, Camera, Upload, CheckCircle2, Loader2, RefreshCw, X, Eye, EyeOff } from 'lucide-react';
 
 function SmsLoginComponent() {
   const router = useRouter();
@@ -12,7 +12,8 @@ function SmsLoginComponent() {
 
   // Login State
   const [accountId, setAccountId] = useState('');
-  const [password, setPassword] = useState('password');
+  const [password, setPassword] = useState(''); // Blank default
+  const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -22,6 +23,8 @@ function SmsLoginComponent() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [regPassword, setRegPassword] = useState(''); // Blank default for custom password
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [deptId, setDeptId] = useState('CSE');
   const [imageBase64, setImageBase64] = useState('');
   
@@ -56,7 +59,6 @@ function SmsLoginComponent() {
     }
   }, [searchParams]);
 
-  // Clean camera track shutdown
   const stopRegCamera = () => {
     if (regStreamRef.current) {
       regStreamRef.current.getTracks().forEach(track => track.stop());
@@ -68,7 +70,6 @@ function SmsLoginComponent() {
     setShowLiveCam(false);
   };
 
-  // Start live webcam for registration snapshot
   const startRegCamera = async () => {
     try {
       stopRegCamera();
@@ -95,7 +96,6 @@ function SmsLoginComponent() {
     }
   };
 
-  // Snap photo from live camera
   const snapLivePhoto = () => {
     if (!regVideoRef.current || !regCanvasRef.current) return;
     const video = regVideoRef.current;
@@ -151,7 +151,7 @@ function SmsLoginComponent() {
       router.push('/sms');
 
     } catch (err: any) {
-      setLoginError(err.message || "Invalid credentials. Try default password 'password'.");
+      setLoginError(err.message || "Invalid credentials.");
     } finally {
       setLoginLoading(false);
     }
@@ -179,6 +179,7 @@ function SmsLoginComponent() {
           role,
           email,
           phone,
+          password: regPassword,
           dept_id: deptId,
           image_base64: imageBase64,
           roll_number: rollNumber || userId,
@@ -195,11 +196,15 @@ function SmsLoginComponent() {
         throw new Error(data.detail || "Registration failed.");
       }
 
-      setRegSuccess(`Successfully registered ${name} (${userId})! Redirecting to Biometric Kiosk...`);
+      setRegSuccess(`Registration successful for ${name} (${userId})! Redirecting to Login...`);
       
+      // Post-registration: Redirect to Login tab so user logs in first
       setTimeout(() => {
-        router.push('/sms');
-      }, 1200);
+        setAccountId(userId);
+        setPassword(regPassword || 'password');
+        setTab('LOGIN');
+        setRegSuccess(null);
+      }, 1500);
 
     } catch (err: any) {
       setRegError(err.message || "Registration failed.");
@@ -271,7 +276,7 @@ function SmsLoginComponent() {
                   required
                   value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
-                  placeholder="STU-1001 or FAC-2001"
+                  placeholder="Enter User ID or Roll Number (e.g. STU-1001)"
                   className="w-full pl-10 pr-4 py-2.5 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
                 />
                 <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
@@ -282,13 +287,22 @@ function SmsLoginComponent() {
               <label className="block text-xs font-semibold text-gray-300 mb-1">Password</label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  placeholder="Enter your account password"
+                  className="w-full pl-10 pr-10 py-2.5 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
                 />
                 <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-3 text-gray-400 hover:text-gray-200 transition-colors"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -347,12 +361,11 @@ function SmsLoginComponent() {
               </div>
             </div>
 
-            {/* Biometric Photo Options: Live Camera Capture OR File Upload */}
+            {/* Biometric Photo Options */}
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1.5">Biometric Photo</label>
               
               {showLiveCam ? (
-                /* Live Camera Capture Box */
                 <div className="relative rounded-2xl overflow-hidden bg-black border border-purple-500/50 shadow-xl aspect-video flex items-center justify-center">
                   <video
                     ref={regVideoRef}
@@ -380,7 +393,6 @@ function SmsLoginComponent() {
                   </div>
                 </div>
               ) : (
-                /* Default Photo Preview + 2 Action Buttons */
                 <div className="flex items-center gap-4">
                   <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-gray-900 border border-white/10 flex items-center justify-center flex-shrink-0">
                     {imageBase64 ? (
@@ -422,7 +434,7 @@ function SmsLoginComponent() {
                   required
                   value={userId}
                   onChange={(e) => setUserId(e.target.value)}
-                  placeholder={role === 'STUDENT' ? 'STU-1001' : 'FAC-2001'}
+                  placeholder={role === 'STUDENT' ? 'e.g. STU-1001' : 'e.g. FAC-2001'}
                   className="w-full px-3.5 py-2 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                 />
               </div>
@@ -433,9 +445,34 @@ function SmsLoginComponent() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Dr. John Doe"
+                  placeholder="Enter full name"
                   className="w-full px-3.5 py-2 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                 />
+              </div>
+            </div>
+
+            {/* Custom Password Field (Optional) */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
+                Password <span className="text-purple-400 font-normal">(Leave blank for default password: "password")</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showRegPassword ? 'text' : 'password'}
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  placeholder="Set custom password or leave blank"
+                  className="w-full pl-10 pr-10 py-2 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                />
+                <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-2.5" />
+                <button
+                  type="button"
+                  onClick={() => setShowRegPassword(!showRegPassword)}
+                  className="absolute right-3.5 top-2.5 text-gray-400 hover:text-gray-200 transition-colors"
+                  title={showRegPassword ? "Hide password" : "Show password"}
+                >
+                  {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -460,7 +497,7 @@ function SmsLoginComponent() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="john@institution.edu"
+                  placeholder="Enter email address"
                   className="w-full px-3.5 py-2 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                 />
               </div>
@@ -499,7 +536,7 @@ function SmsLoginComponent() {
                     type="text"
                     value={designation}
                     onChange={(e) => setDesignation(e.target.value)}
-                    placeholder="Assistant Lecturer"
+                    placeholder="e.g. Assistant Professor"
                     className="w-full px-3.5 py-2 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
                   />
                 </div>
@@ -509,7 +546,7 @@ function SmsLoginComponent() {
                     type="text"
                     value={specialization}
                     onChange={(e) => setSpecialization(e.target.value)}
-                    placeholder="Machine Learning"
+                    placeholder="e.g. Machine Learning"
                     className="w-full px-3.5 py-2 bg-dark-bg/60 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
                   />
                 </div>
@@ -543,7 +580,7 @@ function SmsLoginComponent() {
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Register & Open Biometric Kiosk</span>
+                  <span>Register & Proceed to Login</span>
                 </>
               )}
             </button>

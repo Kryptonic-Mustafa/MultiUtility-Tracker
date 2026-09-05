@@ -20,6 +20,7 @@ class RegisterUserRequest(BaseModel):
     role: str # STUDENT, HOD, TEACHER, SUB_TEACHER, STAFF
     email: str = ""
     phone: str = ""
+    password: str = "" # Optional custom password
     dept_id: str = ""
     image_base64: str
     subjects_csv: str = ""
@@ -53,8 +54,9 @@ def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
             detail="No face detected in image. Please take a clear face photo."
         )
 
-    # Clean direct bcrypt hashing
-    hashed_pwd = hash_password("password")
+    # Use custom password if provided, else default to 'password'
+    raw_pwd = req.password.strip() if req.password.strip() else "password"
+    hashed_pwd = hash_password(raw_pwd)
 
     new_user = UserModel(
         user_id=req.user_id.strip(),
@@ -97,7 +99,6 @@ def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
 
     db.commit()
 
-    # Instantly reload memory cache
     face_engine.reload_encodings(db)
 
     return {

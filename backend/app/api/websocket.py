@@ -13,9 +13,6 @@ from backend.app.models.db_models import AttendanceLogModel
 router = APIRouter(tags=["WebSocket"])
 logger = logging.getLogger("websocket")
 
-cooldown_tracker = {}
-COOLDOWN_SECONDS = 30.0
-
 @router.websocket("/ws/attendance")
 async def websocket_attendance(websocket: WebSocket):
     await websocket.accept()
@@ -64,16 +61,19 @@ async def websocket_attendance(websocket: WebSocket):
 
                 if match:
                     user_id = match["user_id"]
-                    current_time = time.time()
-                    last_logged = cooldown_tracker.get(user_id, 0)
+                    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
                     
-                    is_cooldown = (current_time - last_logged) < COOLDOWN_SECONDS
+                    db = SessionLocal()
+                    try:
+                        # Check if user already logged attendance today
+                        existing_log = db.query(AttendanceLogModel).filter(
+                            AttendanceLogModel.user_id == user_id,
+                            AttendanceLogModel.timestamp >= today_start
+                        ).first()
 
-                    if not is_cooldown:
-                        cooldown_tracker[user_id] = current_time
-                        
-                        db = SessionLocal()
-                        try:
+                        is_cooldown = (existing_log is not None)
+
+                        if not is_cooldown:
                             new_log = AttendanceLogModel(
                                 user_id=user_id,
                                 user_role=match["role"],
@@ -82,8 +82,8 @@ async def websocket_attendance(websocket: WebSocket):
                             )
                             db.add(new_log)
                             db.commit()
-                        finally:
-                            db.close()
+                    finally:
+                        db.close()
 
                     await websocket.send_json({
                         "status": "MATCHED",
