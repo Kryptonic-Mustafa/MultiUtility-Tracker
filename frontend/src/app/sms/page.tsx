@@ -16,6 +16,18 @@ export default function SmsKioskPage() {
   
   const [unrecognizedSnapshot, setUnrecognizedSnapshot] = useState<string | undefined>();
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('multiutility_user');
+    if (saved) {
+      try {
+        setCurrentUser(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
+
+  const isStudent = currentUser?.role === 'STUDENT';
 
   const fetchRecentLogs = async () => {
     try {
@@ -43,7 +55,9 @@ export default function SmsKioskPage() {
   };
 
   const handleUnrecognized = (snapshot: string) => {
-    setUnrecognizedSnapshot(snapshot);
+    if (!isStudent) {
+      setUnrecognizedSnapshot(snapshot);
+    }
   };
 
   const handleRegisterRedirect = () => {
@@ -75,13 +89,15 @@ export default function SmsKioskPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleRegisterRedirect}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Register New Person</span>
-        </button>
+        {!isStudent && (
+          <button
+            onClick={handleRegisterRedirect}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Register New Person</span>
+          </button>
+        )}
       </div>
 
       {/* Main Grid */}
@@ -97,8 +113,8 @@ export default function SmsKioskPage() {
             />
           </div>
 
-          {/* Unrecognized Person Alert Prompt */}
-          {unrecognizedSnapshot && (
+          {/* Unrecognized Person Alert Prompt - ONLY for non-students */}
+          {!isStudent && unrecognizedSnapshot && (
             <UnrecognizedAlertCard
               snapshot={unrecognizedSnapshot}
               onRegisterClick={handleRegisterRedirect}

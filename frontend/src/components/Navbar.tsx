@@ -90,7 +90,7 @@ export default function Navbar() {
                 }`}
               >
                 <Users className="w-4 h-4" />
-                Students
+                {currentUser.role === 'STUDENT' ? 'My Batchmates' : 'Students'}
               </Link>
 
               <Link
@@ -105,28 +105,44 @@ export default function Navbar() {
                 Faculty & Staff
               </Link>
 
-              <Link
-                href="/sms/departments"
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  pathname === '/sms/departments'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Building2 className="w-4 h-4" />
-                Departments
-              </Link>
+              {currentUser.role !== 'STUDENT' && (
+                <Link
+                  href="/sms/departments"
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    pathname === '/sms/departments'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  Departments
+                </Link>
+              )}
+
+              {currentUser.role !== 'STUDENT' && (
+                <Link
+                  href="/sms/logs"
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    pathname === '/sms/logs'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Clock className="w-4 h-4" />
+                  Logs
+                </Link>
+              )}
 
               <Link
-                href="/sms/logs"
+                href="/sms/report"
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  pathname === '/sms/logs'
+                  pathname === '/sms/report'
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <Clock className="w-4 h-4" />
-                Logs
+                {currentUser.role === 'STUDENT' ? 'Attendance Report' : 'Class Report'}
               </Link>
             </div>
           )}
@@ -205,7 +221,7 @@ export default function Navbar() {
             }`}
           >
             <Users className="w-5 h-5" />
-            <span>Students</span>
+            <span>{currentUser.role === 'STUDENT' ? 'Batchmates' : 'Students'}</span>
           </Link>
 
           <Link
@@ -218,25 +234,39 @@ export default function Navbar() {
             <span>Faculty</span>
           </Link>
 
-          <Link
-            href="/sms/departments"
-            className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
-              pathname === '/sms/departments' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Building2 className="w-5 h-5" />
-            <span>Depts</span>
-          </Link>
+          {currentUser.role !== 'STUDENT' && (
+            <Link
+              href="/sms/departments"
+              className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
+                pathname === '/sms/departments' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Building2 className="w-5 h-5" />
+              <span>Depts</span>
+            </Link>
+          )}
 
-          <Link
-            href="/sms/logs"
-            className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
-              pathname === '/sms/logs' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Clock className="w-5 h-5" />
-            <span>Logs</span>
-          </Link>
+          {currentUser.role !== 'STUDENT' ? (
+            <Link
+              href="/sms/logs"
+              className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
+                pathname === '/sms/logs' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Clock className="w-5 h-5" />
+              <span>Logs</span>
+            </Link>
+          ) : (
+            <Link
+              href="/sms/report"
+              className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
+                pathname === '/sms/report' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Clock className="w-5 h-5" />
+              <span>Report</span>
+            </Link>
+          )}
 
           <Link
             href="/modules"
