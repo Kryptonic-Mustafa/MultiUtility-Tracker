@@ -91,7 +91,7 @@ export default function SmsKioskPage() {
         <div className="lg:col-span-7 space-y-4">
           <div className="glass-panel rounded-3xl p-4 border border-white/10">
             <WebcamFeed
-              isActive={true}
+              isActive={false}
               onStatusUpdate={handleStatusUpdate}
               onUnrecognized={handleUnrecognized}
             />
