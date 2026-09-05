@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from sqlalchemy import text
 from backend.app.core.db import engine, Base, SessionLocal
 from backend.app.core.face_engine import face_engine
 from backend.app.api.auth import router as auth_router
@@ -20,6 +21,15 @@ logger = logging.getLogger("main")
 async def lifespan(app: FastAPI):
     logger.info("Initializing TiDB Cloud MySQL tables...")
     Base.metadata.create_all(bind=engine)
+    
+    # Auto-add missing columns to existing MySQL tables
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR(50) DEFAULT ''"))
+            conn.commit()
+        except Exception:
+            pass # Column already exists
+            
     logger.info("Database tables verified.")
 
     db = SessionLocal()
