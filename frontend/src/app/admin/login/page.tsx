@@ -57,11 +57,10 @@ export default function MasterAdminLoginPage() {
         throw new Error('Access Denied: Master Admin Portal requires Super Admin or System Admin privileges.');
       }
 
-      // Store auth session
-      localStorage.setItem('multiutility_user', JSON.stringify(user));
-      localStorage.setItem('master_admin_user', JSON.stringify(user));
+      // Store Master Admin session strictly in dedicated key
+      localStorage.setItem('master_admin_session', JSON.stringify(user));
       if (data.token) {
-        localStorage.setItem('multiutility_token', data.token);
+        localStorage.setItem('master_admin_token', data.token);
       }
 
       showToast(`Welcome back, ${user.name || 'Master Admin'}!`, 'success', 'Admin Authenticated');
@@ -85,8 +84,7 @@ export default function MasterAdminLoginPage() {
           assigned_modules: ['SMS', 'ADMIN_PANEL'],
           dept_id: 'ALL'
         };
-        localStorage.setItem('multiutility_user', JSON.stringify(fallbackUser));
-        localStorage.setItem('master_admin_user', JSON.stringify(fallbackUser));
+        localStorage.setItem('master_admin_session', JSON.stringify(fallbackUser));
         showToast('Authenticated Master Admin (Fast Gateway)', 'success', 'Master Admin Active');
         window.location.href = '/admin';
         return;
