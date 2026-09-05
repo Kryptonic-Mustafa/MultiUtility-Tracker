@@ -1,43 +1,65 @@
 import os
 import sys
-import subprocess
 import time
+import subprocess
 import webbrowser
 import threading
+import urllib.request
 
 def start_backend():
-    print("Starting MultiUtility Tracker FastAPI Engine...")
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    print('Starting FastAPI Backend Server (Port 8000)...')
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.append(root_dir)
     import uvicorn
-    uvicorn.run("backend.app.main:app", host="127.0.0.1", port=8000, log_level="info")
+    uvicorn.run('backend.app.main:app', host='127.0.0.1', port=8000, log_level='error')
 
-def open_ui():
-    time.sleep(2)
-    url = "http://localhost:3000"
-    print(f"Opening MultiUtility Tracker Desktop Application UI at {url}...")
+def start_frontend():
+    print('Starting Next.js Web UI Server (Port 3000)...')
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    frontend_dir = os.path.join(root_dir, 'frontend')
+    cmd = 'node node_modules/next/dist/bin/next dev -p 3000'
+    subprocess.Popen(cmd, cwd=frontend_dir, shell=True)
+
+def is_port_ready(url):
     try:
-        # Try opening in Chrome App Mode
-        chrome_cmd = f'start chrome --app={url}'
-        os.system(chrome_cmd)
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=2) as response:
+            return response.status == 200
     except Exception:
-        webbrowser.open(url)
+        return False
 
-if __name__ == "__main__":
-    print("=" * 60)
-    print("   MultiUtility Tracker - Enterprise Desktop Software")
-    print("=" * 60)
+def open_browser():
+    print('Checking Web UI readiness on http://localhost:3000...')
+    for i in range(30):
+        if is_port_ready('http://localhost:3000'):
+            print('Web UI is online! Launching application window...')
+            time.sleep(1)
+            try:
+                os.system('start chrome --app=http://localhost:3000')
+            except Exception:
+                webbrowser.open('http://localhost:3000')
+            return
+        time.sleep(1)
     
-    # Launch backend server thread
-    backend_thread = threading.Thread(target=start_backend, daemon=True)
-    backend_thread.start()
+    print('Opening browser fallback...')
+    webbrowser.open('http://localhost:3000')
 
-    # Launch desktop browser window
-    open_ui()
+if __name__ == '__main__':
+    print('=' * 65)
+    print('   MultiUtility Tracker - Enterprise Desktop & Web Platform')
+    print('=' * 65)
+
+    b_thread = threading.Thread(target=start_backend, daemon=True)
+    b_thread.start()
+
+    f_thread = threading.Thread(target=start_frontend, daemon=True)
+    f_thread.start()
+
+    open_browser()
 
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("Shutting down MultiUtility Tracker...")
+        print('Shutting down MultiUtility Tracker...')
         sys.exit(0)
