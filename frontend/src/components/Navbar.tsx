@@ -28,6 +28,9 @@ export default function Navbar() {
   }, [pathname]);
 
   const handleLogout = () => {
+    if (typeof window !== 'undefined' && !window.confirm('Do you want to logout?')) {
+      return;
+    }
     localStorage.removeItem('multiutility_token');
     localStorage.removeItem('multiutility_user');
     setCurrentUser(null);
