@@ -5,6 +5,13 @@ All accounts below have been seeded into the Cloud Database (TiDB Cloud MySQL).
 System Default Password for ALL test accounts is: "password"
 
 --------------------------------------------------------------------------------
+0. MASTER SYSTEM / PROJECT SUPER ADMIN (Full System Master: Modules, DB Editor, Global Rules)
+--------------------------------------------------------------------------------
+[User ID / Email]                 [Name]                      [Role]         [System Scope]
+--------------------------------------------------------------------------------
+SUPER-ADMIN (or superadmin@university.edu) Master Project Super Admin SUPER_ADMIN Full Master (All Modules, DB & Rules)
+
+--------------------------------------------------------------------------------
 1. STUDENT ACCOUNTS (Student View: My Batchmates, Faculty List, Attendance Report)
 --------------------------------------------------------------------------------
 [User ID / Email]                 [Name]                          [Dept]   [Roll No / Class]
@@ -20,11 +27,30 @@ STU-401 (or siddharth@university.edu) Siddharth Malhotra            IT       Yr 
 STU-501 (or kavya@university.edu)   Kavya Sharma                    CIVIL    Yr 1, Sec A
 
 --------------------------------------------------------------------------------
-2. HOD & FACULTY ACCOUNTS (Full Management View: Kiosk, Students, Faculty, Depts, Logs)
+2. DEPARTMENT ADMIN ACCOUNTS (Full Management View: Add, Edit, Delete Students, HODs & Faculty)
+--------------------------------------------------------------------------------
+[User ID / Email]                 [Name]                      [Role]   [Dept Scope]
+--------------------------------------------------------------------------------
+CSE-ADMIN                         CSE Department Admin        ADMIN    CSE (Full Add/Edit/Delete)
+ECE-ADMIN                         ECE Department Admin        ADMIN    ECE (Full Add/Edit/Delete)
+MECH-ADMIN                        MECH Department Admin       ADMIN    MECH (Full Add/Edit/Delete)
+IT-ADMIN                          IT Department Admin         ADMIN    IT (Full Add/Edit/Delete)
+CIVIL-ADMIN                       CIVIL Department Admin      ADMIN    CIVIL (Full Add/Edit/Delete)
+
+--------------------------------------------------------------------------------
+3. PRINCIPAL & EXECUTIVE VIEWER ACCOUNTS (Read-Only Viewer View Across Department / College)
+--------------------------------------------------------------------------------
+[User ID / Email]                 [Name]                      [Role]      [Dept Scope]
+--------------------------------------------------------------------------------
+CSE-PRINCIPAL                     Dr. Arvind Rao              PRINCIPAL   CSE (Read-Only Viewer)
+COLLEGE-PRINCIPAL                 Dr. K. V. Subramaniam       PRINCIPAL   ALL (Read-Only Viewer)
+
+--------------------------------------------------------------------------------
+4. HOD & FACULTY ACCOUNTS (Department Read-Only View: Students, Faculty, Report, Kiosk)
 --------------------------------------------------------------------------------
 [User ID / Email]                     [Name]                 [Role]     [Dept / Specialization]
 --------------------------------------------------------------------------------
-HOD-CSE-01 (or hod.cse@university.edu) Dr. Rajesh Sharma      HOD        CSE (Artificial Intelligence)
+HOD-CSE-01 (or ) Dr. Rajesh Sharma      HOD        CSE (Artificial Intelligence)
 HOD-ECE-01 (or hod.ece@university.edu) Dr. Suresh Nair        HOD        ECE (VLSI Design)
 HOD-MECH-01 (or hod.mech@university.edu) Dr. Vikramaditya    HOD        MECH (Thermodynamics)
 HOD-IT-01 (or hod.it@university.edu)   Dr. Sunita Deshmukh    HOD        IT (Cloud Computing)
@@ -41,8 +67,16 @@ STAFF-01 (or staff@university.edu)       Mrs. Kavita Saxena  STAFF      CSE (Aca
 
 --------------------------------------------------------------------------------
 HOW TO TEST:
-1. Open http://localhost:3000/sms/login
-2. Enter any User ID (e.g. STU-503) or Email (e.g. mustafa@university.edu)
+
+A. MASTER PROJECT SUPER ADMIN PORTAL (Separated Dedicated Admin Login):
+1. Open http://localhost:3000/admin/login
+2. Enter ID: SUPER-ADMIN
 3. Enter Password: password
-4. Click "Login to SMS Workspace"
+4. Click "Authenticate & Enter Panel" -> Directly opens Master Admin Panel (/admin)
+
+B. STANDARD MODULE WORKSPACE (Student, Faculty, HOD, Principal, Dept Admin):
+1. Open http://localhost:3000/sms/login
+2. Enter any User ID (e.g. CSE-ADMIN, CSE-PRINCIPAL, TCH-CSE-01, STU-503)
+3. Enter Password: password
+4. Click "Login to SMS Workspace" -> Opens standard module dashboard
 ================================================================================

@@ -29,6 +29,8 @@ class RegisterUserRequest(BaseModel):
     roll_number: str = ""
     academic_year: int = 1
     section: str = "A"
+    parent_name: str = ""
+    parent_contact: str = ""
     guardian_name: str = ""
     guardian_contact: str = ""
     # Faculty specific
@@ -37,11 +39,51 @@ class RegisterUserRequest(BaseModel):
     shift_start: str = "09:00:00"
     shift_end: str = "17:00:00"
 
+@router.get("/generate-id")
+def generate_user_id(role: str = "STUDENT", db: Session = Depends(get_db_sync)):
+    role_upper = role.strip().upper()
+    if role_upper == "STUDENT":
+        prefix = "STU"
+        base_num = 500
+    elif role_upper == "HOD":
+        prefix = "HOD"
+        base_num = 100
+    elif role_upper in ["TEACHER", "SUB_TEACHER"]:
+        prefix = "TCH"
+        base_num = 200
+    else:
+        prefix = "STF"
+        base_num = 300
+
+    users = db.query(UserModel.user_id).filter(UserModel.user_id.like(f"{prefix}-%")).all()
+    max_num = base_num
+
+    for (uid,) in users:
+        try:
+            parts = uid.split("-")
+            if len(parts) >= 2 and parts[1].isdigit():
+                num = int(parts[1])
+                if num > max_num:
+                    max_num = num
+        except Exception:
+            pass
+
+    next_id = f"{prefix}-{max_num + 1}"
+    return {"user_id": next_id, "roll_number": next_id if role_upper == "STUDENT" else ""}
+
 @router.post("/user")
 def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
-    existing = db.query(UserModel).filter(UserModel.user_id == req.user_id).first()
+    target_role = req.role.strip().upper()
+    
+    # Auto generate user_id if not provided
+    user_id = req.user_id.strip()
+    if not user_id:
+        gen = generate_user_id(target_role, db)
+        user_id = gen["user_id"]
+
+    existing = db.query(UserModel).filter(UserModel.user_id == user_id).first()
     if existing:
-        raise HTTPException(status_code=400, detail=f"User ID '{req.user_id}' already exists.")
+        raise HTTPException(status_code=400, detail=f"User ID / Roll No '{user_id}' already exists.")
 
     bgr_img = face_engine.decode_image_base64(req.image_base64)
     if bgr_img is None:
@@ -59,12 +101,12 @@ def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
     hashed_pwd = hash_password(raw_pwd)
 
     new_user = UserModel(
-        user_id=req.user_id.strip(),
+        user_id=user_id,
         name=req.name.strip(),
         email=req.email.strip(),
         phone=req.phone.strip(),
         password_hash=hashed_pwd,
-        role=req.role.strip().upper(),
+        role=target_role,
         dept_id=req.dept_id.strip(),
         assigned_modules_csv="SMS",
         subjects_csv=req.subjects_csv.strip(),
@@ -76,20 +118,22 @@ def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
     db.add(new_user)
     db.flush()
 
-    if req.role.upper() == "STUDENT":
-        roll_no = req.roll_number.strip() or req.user_id.strip()
+    if target_role == "STUDENT":
+        roll_no = req.roll_number.strip() or user_id
         stu_detail = StudentDetailModel(
-            user_id=req.user_id.strip(),
+            user_id=user_id,
             roll_number=roll_no,
             academic_year=req.academic_year,
             section=req.section.strip(),
+            parent_name=req.parent_name.strip(),
+            parent_contact=req.parent_contact.strip(),
             guardian_name=req.guardian_name.strip(),
             guardian_contact=req.guardian_contact.strip()
         )
         db.add(stu_detail)
     else:
         fac_detail = FacultyDetailModel(
-            user_id=req.user_id.strip(),
+            user_id=user_id,
             designation=req.designation.strip() or req.role,
             specialization=req.specialization.strip(),
             shift_start=req.shift_start,
@@ -104,7 +148,7 @@ def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
 
     return {
         "status": "success",
-        "message": f"Successfully registered {req.role} {req.name} ({req.user_id})",
-        "user_id": req.user_id,
+        "message": f"Successfully registered {req.role} {req.name} ({user_id})",
+        "user_id": user_id,
         "bbox": bbox
     }

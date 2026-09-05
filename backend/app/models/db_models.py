@@ -65,6 +65,8 @@ class StudentDetailModel(Base):
     roll_number = Column(String(50), nullable=False)
     academic_year = Column(Integer, nullable=False, default=1)
     section = Column(String(10), default="A")
+    parent_name = Column(String(100), default="")
+    parent_contact = Column(String(20), default="")
     guardian_name = Column(String(100), default="")
     guardian_contact = Column(String(20), default="")
 

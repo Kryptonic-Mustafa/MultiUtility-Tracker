@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Edit3, ArrowLeft, Save, X, CheckCircle2, Shield, Camera, Mail, Phone, Building2, GraduationCap, Briefcase, Calendar, Hash } from 'lucide-react';
+import { User, Edit3, ArrowLeft, Save, X, CheckCircle2, Shield, Camera, Mail, Phone, Building2, GraduationCap, Briefcase, Calendar, Hash, Lock, Upload } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { showToast } = useToast();
   
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [profileData, setProfileData] = useState<any>(null);
@@ -13,6 +15,13 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Photo Change Modal & Camera State
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showLiveCam, setShowLiveCam] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Editable Form State
   const [name, setName] = useState('');
@@ -25,12 +34,67 @@ export default function ProfilePage() {
   const [rollNumber, setRollNumber] = useState('');
   const [academicYear, setAcademicYear] = useState(1);
   const [section, setSection] = useState('A');
+  const [parentName, setParentName] = useState('');
+  const [parentContact, setParentContact] = useState('');
   const [guardianName, setGuardianName] = useState('');
   const [guardianContact, setGuardianContact] = useState('');
 
   // Faculty fields
   const [designation, setDesignation] = useState('');
   const [specialization, setSpecialization] = useState('');
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setShowLiveCam(false);
+  };
+
+  const startCamera = async () => {
+    try {
+      stopCamera();
+      setShowLiveCam(true);
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        audio: false
+      });
+
+      streamRef.current = stream;
+
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      }, 200);
+
+    } catch (err) {
+      console.error("Camera error:", err);
+      showToast("Could not access camera for live capture. Please allow camera permissions.", "error");
+      setShowLiveCam(false);
+    }
+  };
+
+  const snapPhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const b64 = canvas.toDataURL('image/jpeg', 0.85);
+    setProfileImageUrl(b64);
+    stopCamera();
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('multiutility_user');
@@ -73,6 +137,8 @@ export default function ProfilePage() {
     setRollNumber(data.roll_number || '');
     setAcademicYear(data.academic_year || 1);
     setSection(data.section || 'A');
+    setParentName(data.parent_name || '');
+    setParentContact(data.parent_contact || '');
     setGuardianName(data.guardian_name || '');
     setGuardianContact(data.guardian_contact || '');
 
@@ -100,6 +166,8 @@ export default function ProfilePage() {
           roll_number: rollNumber,
           academic_year: academicYear,
           section,
+          parent_name: parentName,
+          parent_contact: parentContact,
           guardian_name: guardianName,
           guardian_contact: guardianContact,
           designation,
@@ -121,11 +189,10 @@ export default function ProfilePage() {
       // Refresh profile data and exit edit mode
       fetchProfile(currentUser.user_id);
       setIsEditing(false);
-      setSuccessMsg('Profile updated successfully!');
-      setTimeout(() => setSuccessMsg(null), 4000);
+      showToast('Profile updated successfully!', 'success');
 
     } catch (err: any) {
-      alert(err.message || 'Error saving profile changes.');
+      showToast(err.message || 'Error saving profile changes.', 'error');
     } finally {
       setSaving(false);
     }
@@ -226,11 +293,14 @@ export default function ProfilePage() {
             </div>
 
             {isEditing && (
-              <label className="absolute inset-0 bg-black/60 rounded-3xl flex flex-col items-center justify-center text-white text-[10px] font-bold cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                onClick={() => setShowPhotoModal(true)}
+                className="absolute inset-0 bg-black/60 rounded-3xl flex flex-col items-center justify-center text-white text-[10px] font-bold transition-all hover:bg-black/80"
+              >
                 <Camera className="w-6 h-6 mb-1 text-indigo-400" />
-                <span>Upload Photo</span>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-              </label>
+                <span>Change Photo</span>
+              </button>
             )}
           </div>
 
@@ -241,7 +311,10 @@ export default function ProfilePage() {
                 {profileData?.role || 'USER'}
               </span>
             </div>
-            <p className="text-xs font-mono text-gray-400">User ID: <span className="text-indigo-400 font-bold">{profileData?.user_id}</span></p>
+            <p className="text-xs font-mono text-gray-400">
+              {isStudent ? 'Roll Number / User ID: ' : 'Staff ID / User ID: '}
+              <span className="text-indigo-400 font-bold">{profileData?.user_id}</span>
+            </p>
             <p className="text-xs text-gray-400 flex items-center justify-center sm:justify-start gap-1">
               <Building2 className="w-3.5 h-3.5 text-indigo-400" />
               <span>Department: <strong className="text-white">{deptId || 'CSE'}</strong></span>
@@ -275,7 +348,7 @@ export default function ProfilePage() {
 
               <div className="p-4 rounded-2xl bg-dark-bg/40 border border-white/5 space-y-1">
                 <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-indigo-400" /> Phone Number
+                  <Phone className="w-3.5 h-3.5 text-indigo-400" /> Student Contact Phone
                 </p>
                 <p className="text-xs font-bold text-white">
                   {phone ? phone : <span className="text-gray-500 italic">Not set (click Edit to add)</span>}
@@ -293,34 +366,52 @@ export default function ProfilePage() {
 
             {/* Role Specific Read-Only Details */}
             <h3 className="text-sm font-bold text-white uppercase tracking-wider text-indigo-300 pt-2">
-              {isStudent ? 'Academic & Guardian Details' : 'Faculty Designation & Shift Details'}
+              {isStudent ? 'Academic, Parent & Guardian Details' : 'Faculty Designation & Shift Details'}
             </h3>
 
             {isStudent ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-dark-bg/40 border border-white/5 space-y-1">
                   <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5 text-indigo-400" /> Roll Number
+                    <Hash className="w-3.5 h-3.5 text-indigo-400" /> System Roll Number
                   </p>
-                  <p className="text-xs font-bold text-white">{rollNumber || profileData?.user_id}</p>
+                  <p className="text-xs font-mono font-bold text-indigo-300">{rollNumber || profileData?.user_id}</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-dark-bg/40 border border-white/5 space-y-1">
                   <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
-                    <GraduationCap className="w-3.5 h-3.5 text-indigo-400" /> Year & Section
+                    <GraduationCap className="w-3.5 h-3.5 text-indigo-400" /> Year & Division
                   </p>
-                  <p className="text-xs font-bold text-white">Year {academicYear} • Section {section}</p>
+                  <p className="text-xs font-bold text-white">
+                    Year {academicYear} • Div {section} ({section === 'A' ? 'Girls' : section === 'B' ? 'Boys' : 'Co-ed / Combined'})
+                  </p>
+                </div>
+
+                {/* Parent Information */}
+                <div className="p-4 rounded-2xl bg-dark-bg/40 border border-white/5 space-y-1">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Parent Name</p>
+                  <p className="text-xs font-bold text-white">
+                    {parentName ? parentName : <span className="text-gray-500 italic">Not set (click Edit to add)</span>}
+                  </p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-dark-bg/40 border border-white/5 space-y-1">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Guardian Name</p>
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Parent Contact Phone</p>
+                  <p className="text-xs font-bold text-white">
+                    {parentContact ? parentContact : <span className="text-gray-500 italic">Not set (click Edit to add)</span>}
+                  </p>
+                </div>
+
+                {/* Guardian Information (Optional) */}
+                <div className="p-4 rounded-2xl bg-dark-bg/40 border border-white/5 space-y-1">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Guardian Name (Optional)</p>
                   <p className="text-xs font-bold text-white">
                     {guardianName ? guardianName : <span className="text-gray-500 italic">Not set (click Edit to add)</span>}
                   </p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-dark-bg/40 border border-white/5 space-y-1">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Guardian Contact</p>
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Guardian Contact Phone (Optional)</p>
                   <p className="text-xs font-bold text-white">
                     {guardianContact ? guardianContact : <span className="text-gray-500 italic">Not set (click Edit to add)</span>}
                   </p>
@@ -379,7 +470,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1">Phone Number</label>
+                <label className="block text-xs font-bold text-gray-300 mb-1">Student Contact Phone</label>
                 <input
                   type="text"
                   value={phone}
@@ -414,18 +505,17 @@ export default function ProfilePage() {
             {isStudent ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1">Roll Number</label>
-                  <input
-                    type="text"
-                    value={rollNumber}
-                    onChange={(e) => setRollNumber(e.target.value)}
-                    placeholder="Enter roll number"
-                    className="w-full px-3.5 py-2.5 bg-dark-card border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
-                  />
+                  <label className="block text-xs font-bold text-gray-300 mb-1">Roll Number (System Generated)</label>
+                  <div className="w-full px-3.5 py-2.5 bg-dark-bg/60 border border-white/10 rounded-xl text-xs font-mono font-bold text-indigo-300 flex items-center justify-between cursor-not-allowed">
+                    <span>{rollNumber || profileData?.user_id}</span>
+                    <span className="text-[10px] uppercase font-extrabold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20 flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Read Only
+                    </span>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1">Academic Year & Section</label>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">Academic Year & Division</label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={academicYear}
@@ -438,34 +528,58 @@ export default function ProfilePage() {
                       <option value={4}>Year 4</option>
                     </select>
 
-                    <input
-                      type="text"
+                    <select
                       value={section}
                       onChange={(e) => setSection(e.target.value)}
-                      placeholder="Sec A"
-                      className="px-3.5 py-2.5 bg-dark-card border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
-                    />
+                      className="px-3.5 py-2.5 bg-dark-card border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+                    >
+                      <option value="A">Div A (Girls)</option>
+                      <option value="B">Div B (Boys)</option>
+                      <option value="C">Div C (Co-ed / Extra fit)</option>
+                    </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1">Guardian Name</label>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">Parent Name</label>
                   <input
                     type="text"
-                    value={guardianName}
-                    onChange={(e) => setGuardianName(e.target.value)}
-                    placeholder="Enter guardian name"
+                    value={parentName}
+                    onChange={(e) => setParentName(e.target.value)}
+                    placeholder="Enter parent's full name"
                     className="w-full px-3.5 py-2.5 bg-dark-card border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1">Guardian Contact Phone</label>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">Parent Contact Phone</label>
+                  <input
+                    type="text"
+                    value={parentContact}
+                    onChange={(e) => setParentContact(e.target.value)}
+                    placeholder="Enter parent contact number"
+                    className="w-full px-3.5 py-2.5 bg-dark-card border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">Guardian Name (Optional)</label>
+                  <input
+                    type="text"
+                    value={guardianName}
+                    onChange={(e) => setGuardianName(e.target.value)}
+                    placeholder="Enter guardian name (optional)"
+                    className="w-full px-3.5 py-2.5 bg-dark-card border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">Guardian Contact Phone (Optional)</label>
                   <input
                     type="text"
                     value={guardianContact}
                     onChange={(e) => setGuardianContact(e.target.value)}
-                    placeholder="Enter guardian contact number"
+                    placeholder="Enter guardian contact number (optional)"
                     className="w-full px-3.5 py-2.5 bg-dark-card border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -521,6 +635,114 @@ export default function ProfilePage() {
         )}
 
       </div>
+
+      {/* Photo Change Modal */}
+      {showPhotoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-md glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Update Profile Photo</h3>
+                  <p className="text-xs text-gray-400">Capture live photo or upload image file</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  stopCamera();
+                  setShowPhotoModal(false);
+                }}
+                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <canvas ref={canvasRef} className="hidden" />
+
+            {showLiveCam ? (
+              <div className="relative rounded-2xl overflow-hidden bg-black border border-indigo-500/50 shadow-xl aspect-video flex items-center justify-center mb-4">
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover transform -scale-x-100"
+                />
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={snapPhoto}
+                    className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-bold shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Snap Photo Now</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopCamera}
+                    className="p-2 bg-gray-900/80 hover:bg-red-500/80 text-white rounded-full text-xs transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 mb-4">
+                <div className="flex items-center justify-center">
+                  <div className="w-32 h-32 rounded-3xl overflow-hidden bg-gray-900 border-2 border-indigo-500/40 flex items-center justify-center shadow-inner">
+                    {profileImageUrl ? (
+                      <img src={profileImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-12 h-12 text-gray-600" />
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-2xl text-xs font-bold text-indigo-300 transition-all hover:scale-[1.02]"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Capture Live</span>
+                  </button>
+
+                  <label className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-semibold text-gray-300 cursor-pointer transition-all hover:scale-[1.02]">
+                    <Upload className="w-4 h-4 text-indigo-400" />
+                    <span>Upload File</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        handleImageUpload(e);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  stopCamera();
+                  setShowPhotoModal(false);
+                }}
+                className="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl text-xs shadow-lg hover:bg-indigo-500 transition-all"
+              >
+                Apply & Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

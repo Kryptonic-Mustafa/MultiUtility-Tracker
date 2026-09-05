@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import RegisterUserModal from '@/components/RegisterUserModal';
 import { Users, UserPlus, Search, GraduationCap, Trash2, CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export default function StudentsPage() {
+  const { showToast, confirmAction } = useToast();
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -21,6 +23,7 @@ export default function StudentsPage() {
   }, []);
 
   const isStudent = currentUser?.role === 'STUDENT';
+  const canManage = currentUser?.role === 'ADMIN' || currentUser?.is_admin;
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -41,21 +44,35 @@ export default function StudentsPage() {
     fetchStudents();
   }, []);
 
-  const handleDelete = async (userId: string) => {
-    if (isStudent) return;
-    if (!confirm(`Are you sure you want to delete student ${userId}?`)) return;
-    try {
-      const res = await fetch(`http://${window.location.hostname}:8000/api/students/${userId}`, {
-        method: 'DELETE'
-      });
-      if (res.ok) {
-        fetchStudents();
+  const handleDelete = (userId: string, name?: string) => {
+    if (!canManage) return;
+    confirmAction({
+      title: 'Delete Student',
+      message: `Are you sure you want to delete student ${name ? `${name} (${userId})` : userId}? This action cannot be undone.`,
+      confirmText: 'Delete Student',
+      cancelText: 'Cancel',
+      type: 'danger',
+      icon: 'delete',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`http://${window.location.hostname}:8000/api/students/${userId}`, {
+            method: 'DELETE'
+          });
+          if (res.ok) {
+            showToast(`Student ${userId} deleted successfully`, 'success');
+            fetchStudents();
+          } else {
+            showToast(`Failed to delete student ${userId}`, 'error');
+          }
+        } catch (e: any) {
+          showToast(e.message || 'Error deleting student', 'error');
+        }
       }
-    } catch (e) {}
+    });
   };
 
   const filtered = students.filter(s => {
-    if (isStudent && currentUser?.dept_id) {
+    if (currentUser?.dept_id && currentUser?.dept_id !== 'ALL') {
       const studentDept = (s.dept_id || 'CSE').toUpperCase();
       const userDept = currentUser.dept_id.toUpperCase();
       if (studentDept !== userDept) return false;
@@ -75,18 +92,26 @@ export default function StudentsPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-              {isStudent ? 'My Batchmates' : 'Student Directory'}
+              {isStudent ? 'My Batchmates' : canManage ? `Department Admin (${currentUser?.dept_id || 'CSE'})` : `Department Students (${currentUser?.dept_id || 'CSE'})`}
             </span>
           </div>
           <h1 className="text-2xl font-black text-white">
-            {isStudent ? 'Batchmates & Classmates' : 'Registered Students'}
+            {isStudent
+              ? 'Batchmates & Classmates'
+              : canManage
+              ? `Manage Students (${currentUser?.dept_id || 'CSE'})`
+              : `Students in ${currentUser?.dept_id || 'Department'}`}
           </h1>
           <p className="text-xs text-gray-400">
-            {isStudent ? 'View your class batchmates and student profiles' : 'View and manage enrolled students with biometric encodings'}
+            {isStudent
+              ? 'View your class batchmates and student profiles'
+              : canManage
+              ? 'Register, manage, and update enrolled department students and biometrics'
+              : `View enrolled student records for ${currentUser?.dept_id || 'your department'}`}
           </p>
         </div>
 
-        {!isStudent && (
+        {canManage && (
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
@@ -121,7 +146,7 @@ export default function StudentsPage() {
           <p className="text-xs text-gray-400 max-w-sm mx-auto mb-4">
             No student records match your search query.
           </p>
-          {!isStudent && (
+          {!canManage ? null : (
             <button
               onClick={() => setShowModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs shadow-lg"
@@ -153,9 +178,9 @@ export default function StudentsPage() {
                     </div>
                   </div>
 
-                  {!isStudent && (
+                  {canManage && (
                     <button
-                      onClick={() => handleDelete(s.user_id)}
+                      onClick={() => handleDelete(s.user_id, s.name)}
                       className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
                       title="Delete Student"
                     >
@@ -174,8 +199,8 @@ export default function StudentsPage() {
                     <span className="font-semibold text-indigo-300">{s.dept_id || 'CSE'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Year / Section:</span>
-                    <span className="text-gray-200">Year {s.academic_year} • Sec {s.section}</span>
+                    <span className="text-gray-400">Year / Division:</span>
+                    <span className="text-gray-200">Year {s.academic_year} • Div {s.section}</span>
                   </div>
                 </div>
               </div>
