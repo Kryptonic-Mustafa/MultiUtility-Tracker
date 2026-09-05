@@ -123,7 +123,9 @@ export default function FacultyPage() {
                       <div className="flex items-center gap-1.5">
                         <h3 className="text-sm font-bold text-white group-hover:text-purple-300 transition-colors">{f.name}</h3>
                         {f.role === 'HOD' && (
-                          <Shield className="w-3.5 h-3.5 text-purple-400" title="Head of Department" />
+                          <span title="Head of Department">
+                            <Shield className="w-3.5 h-3.5 text-purple-400" />
+                          </span>
                         )}
                       </div>
                       <p className="text-[11px] text-purple-400 font-mono">ID: {f.user_id}</p>
