@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UserCheck, UserPlus, Lock, User, ArrowRight, KeyRound, AlertCircle, Sparkles, GraduationCap, Briefcase, Camera, Upload, CheckCircle2, Loader2 } from 'lucide-react';
+import { UserCheck, UserPlus, Lock, User, ArrowRight, KeyRound, AlertCircle, Sparkles, GraduationCap, Briefcase, Camera, Upload, CheckCircle2, Loader2, RefreshCw, X, CameraOff } from 'lucide-react';
 
 function SmsLoginComponent() {
   const router = useRouter();
@@ -25,6 +25,12 @@ function SmsLoginComponent() {
   const [deptId, setDeptId] = useState('CSE');
   const [imageBase64, setImageBase64] = useState('');
   
+  // Live Camera Capture State
+  const [showLiveCam, setShowLiveCam] = useState(false);
+  const regVideoRef = useRef<HTMLVideoElement | null>(null);
+  const regCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const regStreamRef = useRef<MediaStream | null>(null);
+
   // Student fields
   const [rollNumber, setRollNumber] = useState('');
   const [academicYear, setAcademicYear] = useState(1);
@@ -49,6 +55,62 @@ function SmsLoginComponent() {
       setImageBase64(snapshotParam);
     }
   }, [searchParams]);
+
+  // Clean camera track shutdown
+  const stopRegCamera = () => {
+    if (regStreamRef.current) {
+      regStreamRef.current.getTracks().forEach(track => track.stop());
+      regStreamRef.current = null;
+    }
+    if (regVideoRef.current) {
+      regVideoRef.current.srcObject = null;
+    }
+    setShowLiveCam(false);
+  };
+
+  // Start live webcam for registration snapshot
+  const startRegCamera = async () => {
+    try {
+      stopRegCamera();
+      setShowLiveCam(true);
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        audio: false
+      });
+
+      regStreamRef.current = stream;
+
+      setTimeout(() => {
+        if (regVideoRef.current) {
+          regVideoRef.current.srcObject = stream;
+          regVideoRef.current.play();
+        }
+      }, 200);
+
+    } catch (err) {
+      console.error("Camera error:", err);
+      alert("Could not access camera for live capture. Please enable permissions.");
+      setShowLiveCam(false);
+    }
+  };
+
+  // Snap photo from live camera
+  const snapLivePhoto = () => {
+    if (!regVideoRef.current || !regCanvasRef.current) return;
+    const video = regVideoRef.current;
+    const canvas = regCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const b64 = canvas.toDataURL('image/jpeg', 0.85);
+    setImageBase64(b64);
+    stopRegCamera();
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -135,7 +197,6 @@ function SmsLoginComponent() {
 
       setRegSuccess(`Successfully registered ${name} (${userId})! Redirecting to Biometric Kiosk...`);
       
-      // Auto-redirect back to Biometric Kiosk after registration
       setTimeout(() => {
         router.push('/sms');
       }, 1200);
@@ -150,6 +211,8 @@ function SmsLoginComponent() {
   return (
     <div className="min-h-[75vh] flex items-center justify-center relative py-6">
       
+      <canvas ref={regCanvasRef} className="hidden" />
+
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-xl glass-panel rounded-3xl p-8 border border-white/10 shadow-2xl relative z-10">
@@ -167,7 +230,10 @@ function SmsLoginComponent() {
         <div className="grid grid-cols-2 gap-1.5 p-1 bg-dark-card/60 rounded-xl border border-white/5 mb-6">
           <button
             type="button"
-            onClick={() => setTab('LOGIN')}
+            onClick={() => {
+              stopRegCamera();
+              setTab('LOGIN');
+            }}
             className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
               tab === 'LOGIN'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
@@ -195,7 +261,6 @@ function SmsLoginComponent() {
         {/* Tab 1: Module Login Form */}
         {tab === 'LOGIN' ? (
           <form onSubmit={handleLogin} className="space-y-4">
-            
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1">
                 User ID, Roll Number, or Email
@@ -247,10 +312,9 @@ function SmsLoginComponent() {
               <span>{loginLoading ? 'Authenticating...' : 'Enter SMS Workspace'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-
           </form>
         ) : (
-          /* Tab 2: Self Registration Form (Embedded Directly, No Modal) */
+          /* Tab 2: Self Registration Form */
           <form onSubmit={handleRegister} className="space-y-4 animate-in fade-in duration-200">
 
             {/* Role Selection */}
@@ -283,27 +347,70 @@ function SmsLoginComponent() {
               </div>
             </div>
 
-            {/* Photo Capture / Upload */}
+            {/* Biometric Photo Options: Live Camera Capture OR File Upload */}
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1.5">Biometric Photo</label>
-              <div className="flex items-center gap-4">
-                <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-gray-900 border border-white/10 flex items-center justify-center flex-shrink-0">
-                  {imageBase64 ? (
-                    <img src={imageBase64} alt="Face Snapshot" className="w-full h-full object-cover" />
-                  ) : (
-                    <Camera className="w-8 h-8 text-gray-600" />
-                  )}
+              
+              {showLiveCam ? (
+                /* Live Camera Capture Box */
+                <div className="relative rounded-2xl overflow-hidden bg-black border border-purple-500/50 shadow-xl aspect-video flex items-center justify-center">
+                  <video
+                    ref={regVideoRef}
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover transform -scale-x-100"
+                  />
+                  <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={snapLivePhoto}
+                      className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-bold shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Snap Photo Now</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={stopRegCamera}
+                      className="p-2 bg-gray-900/80 hover:bg-red-500/80 text-white rounded-full text-xs transition-all"
+                      title="Cancel Live Camera"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                /* Default Photo Preview + 2 Action Buttons */
+                <div className="flex items-center gap-4">
+                  <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-gray-900 border border-white/10 flex items-center justify-center flex-shrink-0">
+                    {imageBase64 ? (
+                      <img src={imageBase64} alt="Face Snapshot" className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="w-8 h-8 text-gray-600" />
+                    )}
+                  </div>
 
-                <div className="flex-1 space-y-2">
-                  <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-semibold text-gray-300 cursor-pointer transition-all">
-                    <Upload className="w-4 h-4 text-purple-400" />
-                    <span>Upload Image File</span>
-                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-                  </label>
-                  <p className="text-[11px] text-gray-400">Clear front-facing image with single visible face.</p>
+                  <div className="flex-1 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={startRegCamera}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-xl text-xs font-bold text-purple-300 transition-all"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Capture Live</span>
+                      </button>
+
+                      <label className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-semibold text-gray-300 cursor-pointer transition-all">
+                        <Upload className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Upload File</span>
+                        <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-gray-400">Capture live webcam snapshot OR upload a front-facing image file.</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* User ID & Full Name */}
