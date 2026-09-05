@@ -18,7 +18,7 @@ def get_all_students(db: Session = Depends(get_db_sync)):
             "user_id": user.user_id,
             "name": user.name,
             "email": user.email,
-            "phone": user.phone,
+            "phone": getattr(user, 'phone', '') or getattr(detail, 'guardian_contact', ''),
             "dept_id": user.dept_id,
             "roll_number": detail.roll_number,
             "academic_year": detail.academic_year,

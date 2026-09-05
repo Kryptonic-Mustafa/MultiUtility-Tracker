@@ -62,6 +62,7 @@ def register_user(req: RegisterUserRequest, db: Session = Depends(get_db_sync)):
         user_id=req.user_id.strip(),
         name=req.name.strip(),
         email=req.email.strip(),
+        phone=req.phone.strip(),
         password_hash=hashed_pwd,
         role=req.role.strip().upper(),
         dept_id=req.dept_id.strip(),

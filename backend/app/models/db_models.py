@@ -25,6 +25,7 @@ class UserModel(Base):
     user_id = Column(String(50), nullable=False)
     name = Column(String(100), nullable=False)
     email = Column(String(100), default="")
+    phone = Column(String(50), default="")
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False) # STUDENT, HOD, TEACHER, SUB_TEACHER, STAFF
     dept_id = Column(String(50), default="")

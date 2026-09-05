@@ -19,7 +19,7 @@ def get_all_faculty(db: Session = Depends(get_db_sync)):
             "name": user.name,
             "role": user.role,
             "email": user.email,
-            "phone": user.phone,
+            "phone": getattr(user, 'phone', ''),
             "dept_id": user.dept_id,
             "designation": detail.designation,
             "specialization": detail.specialization,
