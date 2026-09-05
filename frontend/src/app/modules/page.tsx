@@ -45,21 +45,13 @@ export default function ModulesPage() {
             </p>
           </div>
 
-          <div className="space-y-2 pt-4 border-t border-white/10">
-            <Link
-              href="/sms/login"
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/20 transition-all"
-            >
-              <UserCheck className="w-4 h-4" />
-              <span>SMS Module Login & Self-Register</span>
-            </Link>
-
+          <div className="pt-4 border-t border-white/10">
             <Link
               href="/sms"
-              className="w-full flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white rounded-xl text-xs font-semibold transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01]"
             >
-              <span>Open Attendance Kiosk</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Enter SMS Module Workspace</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>

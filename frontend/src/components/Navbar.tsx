@@ -11,13 +11,21 @@ export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('multiutility_user');
-    if (saved) {
-      try {
-        setCurrentUser(JSON.parse(saved));
-      } catch (e) {}
-    }
-  }, []);
+    const syncUser = () => {
+      const saved = localStorage.getItem('multiutility_user');
+      if (saved) {
+        try {
+          setCurrentUser(JSON.parse(saved));
+        } catch (e) {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    };
+
+    syncUser();
+  }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('multiutility_token');
@@ -27,6 +35,7 @@ export default function Navbar() {
   };
 
   const isSmsModule = pathname.startsWith('/sms');
+  const isLoginPage = pathname === '/sms/login';
 
   return (
     <>
@@ -56,8 +65,8 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* SMS Desktop Navigation Tabs */}
-          {isSmsModule && (
+          {/* SMS Desktop Navigation Tabs - ONLY shown when authenticated */}
+          {isSmsModule && currentUser && !isLoginPage && (
             <div className="hidden md:flex items-center gap-1 bg-gray-900/60 p-1.5 rounded-xl border border-white/5">
               <Link
                 href="/sms"
@@ -159,20 +168,22 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <Link
-                href="/sms/login"
-                className="px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 shadow-md shadow-indigo-600/20 transition-all"
-              >
-                Login
-              </Link>
+              !isLoginPage && (
+                <Link
+                  href="/sms/login"
+                  className="px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 shadow-md shadow-indigo-600/20 transition-all"
+                >
+                  Login
+                </Link>
+              )
             )}
           </div>
 
         </div>
       </nav>
 
-      {/* Mobile Bottom Navigation Shelf (Shortcuts for Desktop Top Nav) */}
-      {isSmsModule && (
+      {/* Mobile Bottom Navigation Shelf - ONLY shown when authenticated */}
+      {isSmsModule && currentUser && !isLoginPage && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-white/10 px-3 py-2 flex items-center justify-around shadow-2xl backdrop-blur-xl bg-dark-bg/95">
           <Link
             href="/sms"
