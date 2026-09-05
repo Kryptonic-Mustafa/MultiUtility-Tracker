@@ -1,22 +1,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import WebcamFeed from '@/components/WebcamFeed';
 import UserCard from '@/components/UserCard';
 import UnrecognizedAlertCard from '@/components/UnrecognizedAlertCard';
-import RegisterUserModal from '@/components/RegisterUserModal';
-import { Camera, UserPlus, Clock, ShieldCheck, Sparkles } from 'lucide-react';
+import { UserPlus, Clock } from 'lucide-react';
 
 export default function SmsKioskPage() {
+  const router = useRouter();
+
   const [matchedUser, setMatchedUser] = useState<any>(null);
   const [cooldown, setCooldown] = useState(false);
   const [timestamp, setTimestamp] = useState<string | undefined>();
   
   const [unrecognizedSnapshot, setUnrecognizedSnapshot] = useState<string | undefined>();
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
-  // Fetch recent logs
   const fetchRecentLogs = async () => {
     try {
       const res = await fetch(`http://${window.location.hostname}:8000/api/attendance/logs?limit=8`);
@@ -46,6 +46,14 @@ export default function SmsKioskPage() {
     setUnrecognizedSnapshot(snapshot);
   };
 
+  const handleRegisterRedirect = () => {
+    if (unrecognizedSnapshot) {
+      router.push(`/sms/login?tab=register&snapshot=${encodeURIComponent(unrecognizedSnapshot)}`);
+    } else {
+      router.push('/sms/login?tab=register');
+    }
+  };
+
   return (
     <div className="space-y-6">
       
@@ -68,10 +76,7 @@ export default function SmsKioskPage() {
         </div>
 
         <button
-          onClick={() => {
-            setUnrecognizedSnapshot(undefined);
-            setShowRegisterModal(true);
-          }}
+          onClick={handleRegisterRedirect}
           className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
         >
           <UserPlus className="w-4 h-4" />
@@ -86,7 +91,7 @@ export default function SmsKioskPage() {
         <div className="lg:col-span-7 space-y-4">
           <div className="glass-panel rounded-3xl p-4 border border-white/10">
             <WebcamFeed
-              isActive={!showRegisterModal}
+              isActive={true}
               onStatusUpdate={handleStatusUpdate}
               onUnrecognized={handleUnrecognized}
             />
@@ -96,7 +101,7 @@ export default function SmsKioskPage() {
           {unrecognizedSnapshot && (
             <UnrecognizedAlertCard
               snapshot={unrecognizedSnapshot}
-              onRegisterClick={() => setShowRegisterModal(true)}
+              onRegisterClick={handleRegisterRedirect}
             />
           )}
         </div>
@@ -154,17 +159,6 @@ export default function SmsKioskPage() {
         </div>
 
       </div>
-
-      {/* Dynamic Registration Modal */}
-      <RegisterUserModal
-        isOpen={showRegisterModal}
-        onClose={() => setShowRegisterModal(false)}
-        initialSnapshot={unrecognizedSnapshot}
-        onSuccess={() => {
-          fetchRecentLogs();
-          setUnrecognizedSnapshot(undefined);
-        }}
-      />
 
     </div>
   );
