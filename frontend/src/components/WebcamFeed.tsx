@@ -9,12 +9,12 @@ interface WebcamFeedProps {
   onUnrecognized?: (snapshot: string, bbox: any) => void;
 }
 
-export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecognized }: WebcamFeedProps) {
+export default function WebcamFeed({ isActive = false, onStatusUpdate, onUnrecognized }: WebcamFeedProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   
-  const [manualPower, setManualPower] = useState(true); // User manual ON/OFF toggle
+  const [manualPower, setManualPower] = useState(false); // Default OFF per user request
   const [isStreaming, setIsStreaming] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
