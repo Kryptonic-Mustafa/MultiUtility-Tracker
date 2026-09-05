@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Camera, Shield, Building2, BookOpen, Layers, ArrowRight, Lock, Sparkles } from 'lucide-react';
+import { Camera, Shield, Building2, BookOpen, Layers, ArrowRight, Lock, Sparkles, UserCheck } from 'lucide-react';
 
 export default function ModulesPage() {
   return (
@@ -10,50 +10,61 @@ export default function ModulesPage() {
       
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-bold text-indigo-400">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-bold text-indigo-400">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Enterprise Utility System</span>
+          <span>Multi-Purpose Platform Gateway</span>
         </div>
         <h1 className="text-3xl font-black text-white">Scoped Module Switcher Gateway</h1>
         <p className="text-sm text-gray-400">
-          Select an authorized module to open your institutional workspace.
+          Select an available module below to enter module workspace or register for module access.
         </p>
       </div>
 
       {/* Modules Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         
         {/* Module 1: SMS */}
-        <Link href="/sms" className="group">
-          <div className="glass-panel rounded-3xl p-6 border border-indigo-500/30 group-hover:border-indigo-500/60 transition-all duration-300 relative overflow-hidden h-full flex flex-col justify-between group-hover:scale-[1.02] shadow-xl shadow-indigo-600/10">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/10 rounded-full blur-2xl group-hover:bg-indigo-600/20 transition-all" />
+        <div className="glass-panel rounded-3xl p-6 border border-indigo-500/30 hover:border-indigo-500/60 transition-all duration-300 relative overflow-hidden h-full flex flex-col justify-between group shadow-xl shadow-indigo-600/10">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/10 rounded-full blur-2xl group-hover:bg-indigo-600/20 transition-all" />
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
-                  <Camera className="w-6 h-6" />
-                </div>
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Active Module #1
-                </span>
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+                <Camera className="w-6 h-6" />
               </div>
-
-              <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">
-                School Management System (SMS)
-              </h3>
-              <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                Real-time biometric attendance kiosk, student/faculty directories, department analytics, and 1-click registration.
-              </p>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Module #1 • Active
+              </span>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-white/10 text-xs font-bold text-indigo-400 group-hover:text-indigo-300">
-              <span>Launch Module Workspace</span>
-              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-            </div>
+            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">
+              School Management System (SMS)
+            </h3>
+            <p className="text-xs text-gray-400 leading-relaxed mb-4">
+              Biometric Attendance Kiosk, Student & Faculty Directory, Department Analytics, and self-registration.
+            </p>
           </div>
-        </Link>
 
-        {/* Module 2: HR & Payroll (Future) */}
+          <div className="space-y-2 pt-4 border-t border-white/10">
+            <Link
+              href="/sms/login"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/20 transition-all"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>SMS Module Login & Self-Register</span>
+            </Link>
+
+            <Link
+              href="/sms"
+              className="w-full flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white rounded-xl text-xs font-semibold transition-all"
+            >
+              <span>Open Attendance Kiosk</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Module 2: HR & Payroll (Future Scope) */}
         <div className="glass-panel rounded-3xl p-6 border border-white/10 opacity-70 relative overflow-hidden h-full flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -77,7 +88,7 @@ export default function ModulesPage() {
           </div>
         </div>
 
-        {/* Module 3: Library & Assets (Future) */}
+        {/* Module 3: Library & Assets (Future Scope) */}
         <div className="glass-panel rounded-3xl p-6 border border-white/10 opacity-70 relative overflow-hidden h-full flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">

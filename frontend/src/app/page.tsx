@@ -7,12 +7,8 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('multiutility_token');
-    if (token) {
-      router.push('/sms');
-    } else {
-      router.push('/login');
-    }
+    // Direct entry to Scoped Module Switcher Gateway
+    router.push('/modules');
   }, [router]);
 
   return (

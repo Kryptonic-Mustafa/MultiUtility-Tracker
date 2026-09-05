@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Camera, CameraOff, RefreshCw, Activity } from 'lucide-react';
+import { Camera, CameraOff, RefreshCw, Activity, Power } from 'lucide-react';
 
 interface WebcamFeedProps {
   isActive?: boolean;
@@ -14,6 +14,7 @@ export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecogn
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   
+  const [manualPower, setManualPower] = useState(true); // User manual ON/OFF toggle
   const [isStreaming, setIsStreaming] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecogn
   const frameCountRef = useRef(0);
   const lastFpsCalcRef = useRef(Date.now());
 
+  // Stop camera tracks cleanly
   const stopCamera = () => {
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => {
@@ -44,6 +46,7 @@ export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecogn
     }
   };
 
+  // Start camera
   const startCamera = async () => {
     setErrorMsg(null);
     try {
@@ -68,8 +71,11 @@ export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecogn
     }
   };
 
+  const isEffectiveActive = isActive && manualPower;
+
+  // Manage Camera & WebSocket Lifecycle based on effective active state
   useEffect(() => {
-    if (!isActive) {
+    if (!isEffectiveActive) {
       stopCamera();
       if (socketRef.current) {
         socketRef.current.close();
@@ -107,12 +113,13 @@ export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecogn
       stopCamera();
       if (ws) ws.close();
     };
-  }, [isActive]);
+  }, [isEffectiveActive]);
 
+  // Frame capture loop
   useEffect(() => {
     let intervalId: any;
 
-    if (isActive && isStreaming && wsConnected) {
+    if (isEffectiveActive && isStreaming && wsConnected) {
       intervalId = setInterval(() => {
         captureAndSendFrame();
       }, 100);
@@ -121,7 +128,7 @@ export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecogn
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isActive, isStreaming, wsConnected]);
+  }, [isEffectiveActive, isStreaming, wsConnected]);
 
   const captureAndSendFrame = () => {
     if (!videoRef.current || !canvasRef.current || !socketRef.current) return;
@@ -159,7 +166,7 @@ export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecogn
     canvas.height = videoRef.current.videoHeight || 480;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!bbox || !isActive) return;
+    if (!bbox || !isEffectiveActive) return;
 
     const scaleX = canvas.width / 480;
     const scaleY = canvas.height / 360;
@@ -182,31 +189,68 @@ export default function WebcamFeed({ isActive = true, onStatusUpdate, onUnrecogn
 
   return (
     <div className="relative rounded-2xl overflow-hidden bg-black/80 border border-white/10 shadow-2xl aspect-video flex items-center justify-center group">
+      
       <canvas ref={canvasRef} className="hidden" />
-      <video ref={videoRef} playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
-      <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none transform -scale-x-100" />
 
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        className="w-full h-full object-cover transform -scale-x-100"
+      />
+
+      <canvas
+        ref={overlayCanvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none transform -scale-x-100"
+      />
+
+      {/* Top Controls Bar */}
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-white">
-          <span className={`w-2.5 h-2.5 rounded-full ${isActive && wsConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-          {isActive ? (wsConnected ? 'WebSocket Active' : 'Connecting Engine...') : 'Camera Standby'}
+          <span className={`w-2.5 h-2.5 rounded-full ${isEffectiveActive && wsConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+          {isEffectiveActive ? (wsConnected ? 'WebSocket Active' : 'Connecting Engine...') : 'Camera Off'}
         </div>
 
-        <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-gray-300">
-          <Activity className="w-3.5 h-3.5 text-indigo-400" />
-          <span>{isActive ? `${fps} FPS` : 'Standby'}</span>
+        <div className="flex items-center gap-2">
+          {/* Manual Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setManualPower(!manualPower)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg ${
+              manualPower
+                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30'
+                : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30'
+            }`}
+          >
+            <Power className="w-3.5 h-3.5" />
+            <span>{manualPower ? 'Turn Camera Off' : 'Turn Camera On'}</span>
+          </button>
+
+          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-gray-300">
+            <Activity className="w-3.5 h-3.5 text-indigo-400" />
+            <span>{isEffectiveActive ? `${fps} FPS` : 'Off'}</span>
+          </div>
         </div>
       </div>
 
-      {!isActive && (
+      {!isEffectiveActive && (
         <div className="absolute inset-0 bg-dark-bg/90 flex flex-col items-center justify-center p-6 text-center z-20">
           <CameraOff className="w-12 h-12 text-indigo-400 mb-2" />
-          <h4 className="text-sm font-bold text-white mb-1">Camera Standby Mode</h4>
-          <p className="text-xs text-gray-400">Camera hardware turns off during user registration.</p>
+          <h4 className="text-sm font-bold text-white mb-1">Camera Stopped</h4>
+          <p className="text-xs text-gray-400 mb-4 max-w-sm">
+            Camera hardware is turned off to save system resources and privacy.
+          </p>
+          <button
+            onClick={() => setManualPower(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all"
+          >
+            <Power className="w-4 h-4" />
+            <span>Turn Camera On</span>
+          </button>
         </div>
       )}
 
-      {isActive && errorMsg && (
+      {isEffectiveActive && errorMsg && (
         <div className="absolute inset-0 bg-dark-bg/95 flex flex-col items-center justify-center p-6 text-center z-20">
           <CameraOff className="w-12 h-12 text-red-400 mb-3 animate-bounce" />
           <h4 className="text-lg font-bold text-white mb-1">Camera Offline</h4>
