@@ -29,7 +29,7 @@ export default function StudentsPage() {
     fetchStudents();
   }, []);
 
-  const handleDelete = async (userId: str) => {
+  const handleDelete = async (userId: string) => {
     if (!confirm(`Are you sure you want to delete student ${userId}?`)) return;
     try {
       const res = await fetch(`http://${window.location.hostname}:8000/api/students/${userId}`, {
