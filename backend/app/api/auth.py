@@ -1,21 +1,31 @@
+import bcrypt
+import jwt
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
-import jwt
-from datetime import datetime, timedelta
 
 from backend.app.core.db import get_db_sync
 from backend.app.core.config import JWT_SECRET
 from backend.app.models.db_models import UserModel, AdminModel
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class LoginRequest(BaseModel):
     account_id_or_email: str
     password: str
     is_admin: bool = False
+
+def hash_password(password: str) -> str:
+    pwd_bytes = password.encode('utf-8')[:72]
+    return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        pwd_bytes = plain_password.encode('utf-8')[:72]
+        return bcrypt.checkpw(pwd_bytes, hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -35,7 +45,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db_sync)):
         if not admin:
             raise HTTPException(status_code=401, detail="Invalid Admin credentials")
             
-        valid_pwd = (req.password == "password") or pwd_context.verify(req.password, admin.password_hash)
+        valid_pwd = (req.password == "password") or verify_password(req.password, admin.password_hash)
         if not valid_pwd:
             raise HTTPException(status_code=401, detail="Invalid Admin password")
             
@@ -59,7 +69,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db_sync)):
     if not user:
         raise HTTPException(status_code=401, detail="User account not found")
 
-    valid_pwd = (req.password == "password") or pwd_context.verify(req.password, user.password_hash)
+    valid_pwd = (req.password == "password") or verify_password(req.password, user.password_hash)
     if not valid_pwd:
         raise HTTPException(status_code=401, detail="Invalid User password")
 
