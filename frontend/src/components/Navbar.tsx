@@ -36,6 +36,7 @@ export default function Navbar() {
 
   const isSmsModule = pathname.startsWith('/sms');
   const isLoginPage = pathname === '/sms/login';
+  const isModulesPage = pathname === '/modules' || pathname === '/';
 
   return (
     <>
@@ -132,14 +133,16 @@ export default function Navbar() {
 
           {/* Right Actions & Profile */}
           <div className="flex items-center gap-3">
-            <Link
-              href="/modules"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
-              title="Module Switcher Gateway"
-            >
-              <Grid className="w-4 h-4 text-indigo-400" />
-              <span className="hidden sm:inline">Modules</span>
-            </Link>
+            {!isModulesPage && (
+              <Link
+                href="/modules"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+                title="Module Switcher Gateway"
+              >
+                <Grid className="w-4 h-4 text-indigo-400" />
+                <span className="hidden sm:inline">Modules</span>
+              </Link>
+            )}
 
             {currentUser?.is_admin && (
               <Link
@@ -168,7 +171,7 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              !isLoginPage && (
+              !isModulesPage && !isLoginPage && (
                 <Link
                   href="/sms/login"
                   className="px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 shadow-md shadow-indigo-600/20 transition-all"
