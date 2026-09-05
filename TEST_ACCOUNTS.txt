@@ -1,0 +1,48 @@
+================================================================================
+   MultiUtility Tracker - Demo Test Accounts & Login Credentials
+================================================================================
+All accounts below have been seeded into the Cloud Database (TiDB Cloud MySQL).
+System Default Password for ALL test accounts is: "password"
+
+--------------------------------------------------------------------------------
+1. STUDENT ACCOUNTS (Student View: My Batchmates, Faculty List, Attendance Report)
+--------------------------------------------------------------------------------
+[User ID / Email]                 [Name]                          [Dept]   [Roll No / Class]
+--------------------------------------------------------------------------------
+STU-503 (or mustafa@university.edu) Mustafa Aliasgar Chhabrawala    CSE      Yr 2, Sec A (Batchmate)
+STU-102 (or rahul@university.edu)   Rahul Verma                     CSE      Yr 2, Sec A (Batchmate)
+STU-103 (or priya@university.edu)   Priya Patel                     CSE      Yr 2, Sec A (Batchmate)
+STU-104 (or aarav@university.edu)   Aarav Mehta                     CSE      Yr 1, Sec B
+STU-201 (or rohan@university.edu)   Rohan Iyer                      ECE      Yr 2, Sec A
+STU-202 (or ananya@university.edu)  Ananya Sen                      ECE      Yr 2, Sec B
+STU-301 (or dev@university.edu)     Dev Kulkarni                    MECH     Yr 3, Sec A
+STU-401 (or siddharth@university.edu) Siddharth Malhotra            IT       Yr 2, Sec B
+STU-501 (or kavya@university.edu)   Kavya Sharma                    CIVIL    Yr 1, Sec A
+
+--------------------------------------------------------------------------------
+2. HOD & FACULTY ACCOUNTS (Full Management View: Kiosk, Students, Faculty, Depts, Logs)
+--------------------------------------------------------------------------------
+[User ID / Email]                     [Name]                 [Role]     [Dept / Specialization]
+--------------------------------------------------------------------------------
+HOD-CSE-01 (or hod.cse@university.edu) Dr. Rajesh Sharma      HOD        CSE (Artificial Intelligence)
+HOD-ECE-01 (or hod.ece@university.edu) Dr. Suresh Nair        HOD        ECE (VLSI Design)
+HOD-MECH-01 (or hod.mech@university.edu) Dr. Vikramaditya    HOD        MECH (Thermodynamics)
+HOD-IT-01 (or hod.it@university.edu)   Dr. Sunita Deshmukh    HOD        IT (Cloud Computing)
+HOD-CIVIL-01 (or hod.civil@university.edu) Dr. Ramesh Chandra HOD        CIVIL (Structural Engg)
+
+TCH-CSE-01 (or teacher.cse@university.edu) Prof. Anita Roy    TEACHER    CSE (Data Structures & Algorithms)
+TCH-ECE-01 (or teacher.ece@university.edu) Prof. Neha Gupta   TEACHER    ECE (Embedded Systems)
+TCH-MECH-01 (or teacher.mech@university.edu) Prof. Kabir Khan TEACHER    MECH (Fluid Mechanics)
+TCH-IT-01 (or teacher.it@university.edu)   Prof. Alok Kumar   TEACHER    IT (Web Engineering)
+TCH-CIVIL-01 (or teacher.civil@university.edu) Prof. Meera    TEACHER    CIVIL (Environmental Science)
+
+SUB-CSE-01 (or subteacher.cse@university.edu) Mr. Vikram Singh SUB_TEACHER CSE (Python Lab)
+STAFF-01 (or staff@university.edu)       Mrs. Kavita Saxena  STAFF      CSE (Academic Operations)
+
+--------------------------------------------------------------------------------
+HOW TO TEST:
+1. Open http://localhost:3000/sms/login
+2. Enter any User ID (e.g. STU-503) or Email (e.g. mustafa@university.edu)
+3. Enter Password: password
+4. Click "Login to SMS Workspace"
+================================================================================
