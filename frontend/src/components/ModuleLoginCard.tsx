@@ -275,7 +275,7 @@ export default function ModuleLoginCard({
   };
 
   return (
-    <div className="w-full max-w-xl glass-panel rounded-3xl p-8 border border-white/10 shadow-2xl relative z-10 mx-auto">
+    <div className="w-full max-w-xl glass-panel rounded-3xl p-5 sm:p-8 border border-white/10 shadow-2xl relative z-10 mx-auto">
       <canvas ref={regCanvasRef} className="hidden" />
 
       {/* Top Header */}

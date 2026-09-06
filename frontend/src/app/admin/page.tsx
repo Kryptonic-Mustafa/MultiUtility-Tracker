@@ -531,6 +531,57 @@ export default function MasterAdminPage() {
           </div>
         </div>
 
+        {/* MOBILE & TABLET HORIZONTAL TAB NAVIGATION (lg:hidden) */}
+        <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar p-1.5 glass-panel rounded-2xl border border-purple-500/30 bg-[#0d1527]">
+          <button
+            onClick={() => setActiveTab('MODULES')}
+            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              activeTab === 'MODULES'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-900/40'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Module DB Registry</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('DATABASE')}
+            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              activeTab === 'DATABASE'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-900/40'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Database className="w-4 h-4" />
+            <span>Multi-DB Inspector</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('USERS')}
+            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              activeTab === 'USERS'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-900/40'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Master Admins</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('SETTINGS')}
+            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              activeTab === 'SETTINGS'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-900/40'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Global Settings</span>
+          </button>
+        </div>
+
       {/* TAB 1: MODULE DB REGISTRY & ORDERING */}
       {activeTab === 'MODULES' && (
         <div className="space-y-4">

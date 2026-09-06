@@ -130,7 +130,7 @@ export default function Navbar() {
 
           {/* SMS Desktop Navigation Tabs - ONLY shown when authenticated */}
           {isSmsModule && currentUser && !isLoginPage && (
-            <div className="hidden md:flex items-center gap-1 bg-gray-900/60 p-1.5 rounded-xl border border-white/5">
+            <div className="hidden lg:flex items-center gap-1 bg-gray-900/60 p-1.5 rounded-xl border border-white/5 max-w-full overflow-x-auto no-scrollbar">
               <Link
                 href="/sms"
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -318,9 +318,9 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Bottom Navigation Shelf - ONLY shown when authenticated */}
+      {/* Mobile & Tablet Bottom Navigation Shelf - ONLY shown when authenticated */}
       {isSmsModule && currentUser && !isLoginPage && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-white/10 px-3 py-2 flex items-center justify-around shadow-2xl backdrop-blur-xl bg-dark-bg/95">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-white/10 px-3 py-2 flex items-center justify-around shadow-2xl backdrop-blur-xl bg-dark-bg/95">
           <Link
             href="/sms"
             className={`flex flex-col items-center gap-1 p-1 text-[10px] font-semibold transition-all ${
