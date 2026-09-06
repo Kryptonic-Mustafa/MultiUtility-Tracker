@@ -21,12 +21,27 @@ export default function HostelLayout({ children }: { children: React.ReactNode }
     const masterAdmin = localStorage.getItem('master_admin_session');
 
     if ((token && user) || masterAdmin) {
-      setIsAuthenticated(true);
-      setIsChecking(false);
-      return;
+      try {
+        const rawUser = user || masterAdmin;
+        const parsedUser = JSON.parse(rawUser!);
+        if (!parsedUser || (!parsedUser.user_id && !parsedUser.admin_id)) {
+          throw new Error("Invalid session data");
+        }
+        const isSuperOrDeptAdmin = parsedUser.role === 'ADMIN' || parsedUser.role === 'SUPER_ADMIN' || parsedUser.is_admin;
+        const isHostelAuthorized = isSuperOrDeptAdmin || 
+                                   parsedUser.active_module === 'hostel' || 
+                                   parsedUser.role === 'HOSTEL_WARDEN' ||
+                                   (parsedUser.user_id && parsedUser.user_id.startsWith('HST-'));
+
+        if (isHostelAuthorized) {
+          setIsAuthenticated(true);
+          setIsChecking(false);
+          return;
+        }
+      } catch (e) {}
     }
 
-    // Purge any residual tokens & redirect unauthenticated users directly to /hostel/login
+    // Purge any residual tokens & redirect unauthorized users directly to /hostel/login
     localStorage.removeItem('multiutility_token');
     localStorage.removeItem('multiutility_user');
     localStorage.removeItem('master_admin_session');

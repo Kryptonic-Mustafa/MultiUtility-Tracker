@@ -92,7 +92,7 @@ export default function Navbar() {
   };
 
   const isSmsModule = pathname.startsWith('/sms');
-  const isLoginPage = pathname === '/sms/login';
+  const isLoginPage = pathname.endsWith('/login') || pathname === '/login' || pathname.includes('/login');
   const isModulesPage = pathname === '/modules' || pathname === '/';
 
   // Do NOT render module navbar on Master Admin routes (/admin and /admin/login)
@@ -313,7 +313,7 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              !isModulesPage && !isLoginPage && (
+              !isLoginPage && (
                 <Link
                   href="/sms/login"
                   className="px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 shadow-md shadow-indigo-600/20 transition-all"

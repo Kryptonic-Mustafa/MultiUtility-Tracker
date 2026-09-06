@@ -20,22 +20,34 @@ export default function DynamicModuleLayout({ children }: { children: React.Reac
     const user = localStorage.getItem('multiutility_user');
     const masterAdmin = localStorage.getItem('master_admin_session');
 
+    const parts = pathname.split('/').filter(Boolean);
+    const modId = parts[0] || 'sms';
+
     if ((token && user) || masterAdmin) {
-      setIsAuthenticated(true);
-      setIsChecking(false);
-      return;
+      try {
+        const rawUser = user || masterAdmin;
+        const parsedUser = JSON.parse(rawUser!);
+        if (!parsedUser || (!parsedUser.user_id && !parsedUser.admin_id)) {
+          throw new Error("Invalid session data");
+        }
+        const isSuperOrDeptAdmin = parsedUser.role === 'ADMIN' || parsedUser.role === 'SUPER_ADMIN' || parsedUser.is_admin;
+        const isDynamicAuthorized = isSuperOrDeptAdmin || parsedUser.active_module === modId;
+
+        if (isDynamicAuthorized) {
+          setIsAuthenticated(true);
+          setIsChecking(false);
+          return;
+        }
+      } catch (e) {}
     }
 
-    // Purge any residual tokens & redirect unauthenticated users directly to login route
+    // Purge any residual tokens & redirect unauthorized users directly to login route
     localStorage.removeItem('multiutility_token');
     localStorage.removeItem('multiutility_user');
     localStorage.removeItem('master_admin_session');
     localStorage.removeItem('master_admin_token');
     setIsAuthenticated(false);
     setIsChecking(false);
-    
-    const parts = pathname.split('/').filter(Boolean);
-    const modId = parts[0] || 'sms';
     router.replace(`/${modId}/login`);
   }, [router, pathname]);
 
