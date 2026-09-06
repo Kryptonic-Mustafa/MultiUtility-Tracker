@@ -15,8 +15,6 @@ export default function MasterAdminPage() {
   const { showToast, confirmAction } = useToast();
 
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [activeTab, setActiveTab] = useState<'MODULES' | 'DATABASE' | 'USERS' | 'SETTINGS'>('MODULES');
 
@@ -59,20 +57,9 @@ export default function MasterAdminPage() {
         const u = JSON.parse(saved);
         if (u && (u.is_admin || u.role === 'SUPER_ADMIN' || u.role === 'ADMIN')) {
           setCurrentUser(u);
-          setIsAuthorized(true);
-        } else {
-          setIsAuthorized(false);
-          window.location.href = '/admin/login';
         }
-      } catch (e) {
-        setIsAuthorized(false);
-        window.location.href = '/admin/login';
-      }
-    } else {
-      setIsAuthorized(false);
-      window.location.href = '/admin/login';
+      } catch (e) {}
     }
-    setCheckingAuth(false);
   }, []);
 
   const handleLogout = () => {
@@ -326,17 +313,6 @@ export default function MasterAdminPage() {
       (val) => val && String(val).toLowerCase().includes(dbSearch.toLowerCase())
     );
   });
-
-  if (checkingAuth || !isAuthorized) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500" />
-        <p className="text-xs text-purple-300 font-bold uppercase tracking-wider animate-pulse">
-          Verifying Master Admin Authorization...
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

@@ -78,6 +78,11 @@ export default function Navbar() {
   const isLoginPage = pathname === '/sms/login';
   const isModulesPage = pathname === '/modules' || pathname === '/';
 
+  // Do NOT render module navbar on Master Admin routes (/admin and /admin/login)
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <>
       {/* Top Navbar */}
