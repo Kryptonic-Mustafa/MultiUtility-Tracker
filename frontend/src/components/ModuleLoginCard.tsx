@@ -188,8 +188,12 @@ export default function ModuleLoginCard({
         throw new Error(data.detail || "Authentication failed");
       }
 
+      const userWithModule = {
+        ...data.user,
+        active_module: moduleId
+      };
       localStorage.setItem('multiutility_token', data.token);
-      localStorage.setItem('multiutility_user', JSON.stringify(data.user));
+      localStorage.setItem('multiutility_user', JSON.stringify(userWithModule));
 
       showToast(`Welcome back, ${data.user.name || accountId}!`, 'success', 'Login Successful');
 

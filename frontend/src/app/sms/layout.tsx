@@ -31,6 +31,27 @@ export default function SmsLayout({ children }: { children: React.ReactNode }) {
           throw new Error("Invalid session data");
         }
         const isSuperOrDeptAdmin = parsedUser.role === 'ADMIN' || parsedUser.role === 'SUPER_ADMIN' || parsedUser.is_admin;
+        
+        const isSmsAuthorized = isSuperOrDeptAdmin || 
+                                parsedUser.active_module === 'sms' ||
+                                ['STUDENT', 'TEACHER', 'HOD', 'SUB_TEACHER', 'STAFF'].includes(parsedUser.role) ||
+                                (parsedUser.user_id && (
+                                  parsedUser.user_id.startsWith('STU-') ||
+                                  parsedUser.user_id.startsWith('TCH-') ||
+                                  parsedUser.user_id.startsWith('HOD-') ||
+                                  parsedUser.user_id.startsWith('SUB-') ||
+                                  parsedUser.user_id.startsWith('STAFF-') ||
+                                  parsedUser.user_id.startsWith('CSE-') ||
+                                  parsedUser.user_id.startsWith('ECE-') ||
+                                  parsedUser.user_id.startsWith('MECH-') ||
+                                  parsedUser.user_id.startsWith('CIVIL-') ||
+                                  parsedUser.user_id.startsWith('IT-')
+                                ));
+
+        if (!isSmsAuthorized) {
+          throw new Error("Unauthorized access: User is not authorized for SMS module.");
+        }
+
         if (!isSuperOrDeptAdmin) {
           if (pathname === '/sms/departments') {
             router.replace('/sms');
