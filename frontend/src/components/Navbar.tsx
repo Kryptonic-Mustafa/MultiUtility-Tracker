@@ -67,24 +67,25 @@ export default function Navbar() {
     
     confirmAction({
       title: 'Confirm Logout',
-      message: isAdminPath ? 'Are you sure you want to log out of Master Admin Panel?' : 'Are you sure you want to log out of MultiUtility Tracker?',
+      message: isAdminPath ? 'Are you sure you want to log out of Master Admin Panel?' : 'Are you sure you want to log out of MultiUtility System?',
       confirmText: 'Logout',
       cancelText: 'Cancel',
       type: 'danger',
       icon: 'logout',
       onConfirm: () => {
+        // Purge ALL sessions completely to prevent lingering credentials
+        localStorage.removeItem('multiutility_token');
+        localStorage.removeItem('multiutility_user');
+        localStorage.removeItem('master_admin_session');
+        localStorage.removeItem('master_admin_token');
+        setCurrentUser(null);
+
         if (isAdminPath) {
-          localStorage.removeItem('master_admin_session');
-          localStorage.removeItem('master_admin_token');
-          setCurrentUser(null);
           showToast('Logged out from Master Admin Panel', 'info', 'Admin Logout');
           window.location.href = '/admin/login';
         } else {
-          localStorage.removeItem('multiutility_token');
-          localStorage.removeItem('multiutility_user');
-          setCurrentUser(null);
-          showToast('Logged out successfully', 'info');
-          router.push('/sms/login');
+          showToast('Logged out of all sessions successfully', 'info', 'Logout Successful');
+          router.replace('/sms/login');
         }
       }
     });
