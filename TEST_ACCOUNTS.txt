@@ -1,82 +1,103 @@
 ================================================================================
-   MultiUtility Tracker - Demo Test Accounts & Login Credentials
+  🚀 MultiUtility Tracker - Demo Test Accounts & Login Credentials Guide
 ================================================================================
-All accounts below have been seeded into the Cloud Database (TiDB Cloud MySQL).
+All accounts below are seeded into the Cloud Database (TiDB Cloud MySQL).
 System Default Password for ALL test accounts is: "password"
 
 --------------------------------------------------------------------------------
-0. MASTER SYSTEM / PROJECT SUPER ADMIN (Full System Master: Modules, DB Editor, Global Rules)
+📍 SYSTEM PORTAL ACCESS URLS:
 --------------------------------------------------------------------------------
-[User ID / Email]                 [Name]                      [Role]         [System Scope]
---------------------------------------------------------------------------------
-SUPER-ADMIN (or superadmin@university.edu) Master Project Super Admin SUPER_ADMIN Full Master (All Modules, DB & Rules)
+• 👑 Master Governance Panel : http://localhost:3000/admin/login
+• 🌐 Scoped Module Gateway    : http://localhost:3000/modules
+• 🎓 School Management (SMS)  : http://localhost:3000/sms/login
+• 💼 HR & Payroll Management  : http://localhost:3000/hr
+• 📚 Digital Library System   : http://localhost:3000/library
+• 🚌 Hostel & Fleet Logistics : http://localhost:3000/hostel
 
---------------------------------------------------------------------------------
-1. STUDENT ACCOUNTS (Student View: My Batchmates, Faculty List, Attendance Report)
---------------------------------------------------------------------------------
-[User ID / Email]                 [Name]                          [Dept]   [Roll No / Class]
---------------------------------------------------------------------------------
-STU-503 (or mustafa@university.edu) Mustafa Aliasgar Chhabrawala    CSE      Yr 2, Sec A (Batchmate)
-STU-102 (or rahul@university.edu)   Rahul Verma                     CSE      Yr 2, Sec A (Batchmate)
-STU-103 (or priya@university.edu)   Priya Patel                     CSE      Yr 2, Sec A (Batchmate)
-STU-104 (or aarav@university.edu)   Aarav Mehta                     CSE      Yr 1, Sec B
-STU-201 (or rohan@university.edu)   Rohan Iyer                      ECE      Yr 2, Sec A
-STU-202 (or ananya@university.edu)  Ananya Sen                      ECE      Yr 2, Sec B
-STU-301 (or dev@university.edu)     Dev Kulkarni                    MECH     Yr 3, Sec A
-STU-401 (or siddharth@university.edu) Siddharth Malhotra            IT       Yr 2, Sec B
-STU-501 (or kavya@university.edu)   Kavya Sharma                    CIVIL    Yr 1, Sec A
+================================================================================
+👑 0. MASTER PROJECT SUPER ADMIN PORTAL (ISOLATED GOVERNANCE LAYER)
+================================================================================
+• Portal URL      : http://localhost:3000/admin/login
+• System Rights   : Full Master Control (Dynamic Module DB Provisioning, Schema Inspector, Global Rules)
 
---------------------------------------------------------------------------------
-2. DEPARTMENT ADMIN ACCOUNTS (Full Management View: Add, Edit, Delete Students, HODs & Faculty)
---------------------------------------------------------------------------------
-[User ID / Email]                 [Name]                      [Role]   [Dept Scope]
---------------------------------------------------------------------------------
-CSE-ADMIN                         CSE Department Admin        ADMIN    CSE (Full Add/Edit/Delete)
-ECE-ADMIN                         ECE Department Admin        ADMIN    ECE (Full Add/Edit/Delete)
-MECH-ADMIN                        MECH Department Admin       ADMIN    MECH (Full Add/Edit/Delete)
-IT-ADMIN                          IT Department Admin         ADMIN    IT (Full Add/Edit/Delete)
-CIVIL-ADMIN                       CIVIL Department Admin      ADMIN    CIVIL (Full Add/Edit/Delete)
+  Credentials:
+  - User ID       : SUPER-ADMIN
+  - Email         : superadmin@university.edu
+  - Password      : password
 
---------------------------------------------------------------------------------
-3. PRINCIPAL & EXECUTIVE VIEWER ACCOUNTS (Read-Only Viewer View Across Department / College)
---------------------------------------------------------------------------------
-[User ID / Email]                 [Name]                      [Role]      [Dept Scope]
---------------------------------------------------------------------------------
-CSE-PRINCIPAL                     Dr. Arvind Rao              PRINCIPAL   CSE (Read-Only Viewer)
-COLLEGE-PRINCIPAL                 Dr. K. V. Subramaniam       PRINCIPAL   ALL (Read-Only Viewer)
+================================================================================
+🎓 1. SCHOOL MANAGEMENT SYSTEM (SMS) & BIOMETRIC ATTENDANCE PORTAL
+================================================================================
+• Portal URL      : http://localhost:3000/sms/login
+• Default Pass    : password
 
---------------------------------------------------------------------------------
-4. HOD & FACULTY ACCOUNTS (Department Read-Only View: Students, Faculty, Report, Kiosk)
---------------------------------------------------------------------------------
-[User ID / Email]                     [Name]                 [Role]     [Dept / Specialization]
---------------------------------------------------------------------------------
-HOD-CSE-01 (or ) Dr. Rajesh Sharma      HOD        CSE (Artificial Intelligence)
-HOD-ECE-01 (or hod.ece@university.edu) Dr. Suresh Nair        HOD        ECE (VLSI Design)
-HOD-MECH-01 (or hod.mech@university.edu) Dr. Vikramaditya    HOD        MECH (Thermodynamics)
-HOD-IT-01 (or hod.it@university.edu)   Dr. Sunita Deshmukh    HOD        IT (Cloud Computing)
-HOD-CIVIL-01 (or hod.civil@university.edu) Dr. Ramesh Chandra HOD        CIVIL (Structural Engg)
+  A. Department Admins (Full Management: Add/Edit/Delete Students, Faculty & HODs):
+     • User ID: CSE-ADMIN   | Dept: Computer Science & Engineering (CSE)
+     • User ID: ECE-ADMIN   | Dept: Electronics & Communication (ECE)
+     • User ID: MECH-ADMIN  | Dept: Mechanical Engineering (MECH)
+     • User ID: IT-ADMIN    | Dept: Information Technology (IT)
+     • User ID: CIVIL-ADMIN | Dept: Civil Engineering (CIVIL)
 
-TCH-CSE-01 (or teacher.cse@university.edu) Prof. Anita Roy    TEACHER    CSE (Data Structures & Algorithms)
-TCH-ECE-01 (or teacher.ece@university.edu) Prof. Neha Gupta   TEACHER    ECE (Embedded Systems)
-TCH-MECH-01 (or teacher.mech@university.edu) Prof. Kabir Khan TEACHER    MECH (Fluid Mechanics)
-TCH-IT-01 (or teacher.it@university.edu)   Prof. Alok Kumar   TEACHER    IT (Web Engineering)
-TCH-CIVIL-01 (or teacher.civil@university.edu) Prof. Meera    TEACHER    CIVIL (Environmental Science)
+  B. Principals & Executive Viewers (College-wide Read-Only Inspection):
+     • User ID: COLLEGE-PRINCIPAL | Name: Dr. K. V. Subramaniam (All Depts Viewer)
+     • User ID: CSE-PRINCIPAL     | Name: Dr. Arvind Rao (CSE Dept Viewer)
 
-SUB-CSE-01 (or subteacher.cse@university.edu) Mr. Vikram Singh SUB_TEACHER CSE (Python Lab)
-STAFF-01 (or staff@university.edu)       Mrs. Kavita Saxena  STAFF      CSE (Academic Operations)
+  C. Department HODs & Faculty Members:
+     • User ID: HOD-CSE-01   | Name: Dr. Rajesh Sharma    | Dept: CSE (AI & Data Science)
+     • User ID: HOD-ECE-01   | Name: Dr. Suresh Nair      | Dept: ECE (VLSI Design)
+     • User ID: TCH-CSE-01   | Name: Prof. Anita Roy      | Dept: CSE (Algorithms)
+     • User ID: TCH-ECE-01   | Name: Prof. Neha Gupta     | Dept: ECE (Embedded Systems)
+     • User ID: SUB-CSE-01   | Name: Mr. Vikram Singh     | Role: Sub-Teacher (Python Lab)
+     • User ID: STAFF-01     | Name: Mrs. Kavita Saxena   | Role: Academic Staff
 
---------------------------------------------------------------------------------
-HOW TO TEST:
+  D. Student Accounts (Student View: Batchmates, Faculty Roster, Attendance Log):
+     • User ID: STU-503 (or mustafa@university.edu) | Name: Mustafa Aliasgar Chhabrawala (CSE, Yr 2)
+     • User ID: STU-102 (or rahul@university.edu)   | Name: Rahul Verma (CSE, Yr 2)
+     • User ID: STU-103 (or priya@university.edu)   | Name: Priya Patel (CSE, Yr 2)
+     • User ID: STU-201 (or rohan@university.edu)   | Name: Rohan Iyer (ECE, Yr 2)
+     • User ID: STU-301 (or dev@university.edu)     | Name: Dev Kulkarni (MECH, Yr 3)
 
-A. MASTER PROJECT SUPER ADMIN PORTAL (Separated Dedicated Admin Login):
-1. Open http://localhost:3000/admin/login
-2. Enter ID: SUPER-ADMIN
-3. Enter Password: password
-4. Click "Authenticate & Enter Panel" -> Directly opens Master Admin Panel (/admin)
+================================================================================
+💼 2. HR & PAYROLL MANAGEMENT SYSTEM (MODULE #2)
+================================================================================
+• Module URL      : http://localhost:3000/hr
+• Target DB       : module_hr
+• Scope           : Employee Onboarding, Payslip Generator, Leave Approvals, Salary Ledger
 
-B. STANDARD MODULE WORKSPACE (Student, Faculty, HOD, Principal, Dept Admin):
-1. Open http://localhost:3000/sms/login
-2. Enter any User ID (e.g. CSE-ADMIN, CSE-PRINCIPAL, TCH-CSE-01, STU-503)
-3. Enter Password: password
-4. Click "Login to SMS Workspace" -> Opens standard module dashboard
+  Credentials:
+  - User ID       : EMP-101 | Name: Dr. Sarah Jenkins  | Designation: Senior Professor
+  - User ID       : EMP-102 | Name: Marcus Vance       | Designation: Assistant Professor
+  - User ID       : EMP-103 | Name: Elena Rostova      | Designation: Lab Administrator
+  - Default Pass  : password
+
+================================================================================
+📚 3. DIGITAL LIBRARY SYSTEM (MODULE #3)
+================================================================================
+• Module URL      : http://localhost:3000/library
+• Target DB       : module_library
+• Scope           : Book Barcode Search, Issue/Return Desk, Overdue Fine Calculator, PDFs
+
+  Credentials:
+  - Borrower ID   : STU-1001 | Name: Alex Johnson   | Book: Effective Java (3rd Ed)
+  - Borrower ID   : STU-1005 | Name: David Miller   | Book: Artificial Intelligence
+  - Default Pass  : password
+
+================================================================================
+🚌 4. HOSTEL & FLEET LOGISTICS SYSTEM (MODULE #4)
+================================================================================
+• Module URL      : http://localhost:3000/hostel
+• Target DB       : module_hostel
+• Scope           : Dormitory Bed Allocation, Live Bus GPS Tracking, Mess Passes, Visitor Passes
+
+  Credentials:
+  - Dorm Room     : A-201 (Alpha Block) & B-104 (Beta Block)
+  - Fleet Routes  : BUS-01 (North City), BUS-02 (South Shuttle), BUS-03 (Metro Link)
+  - Gate Pass ID  : GP-901 (Arthur Pendelton - Family Visit)
+  - Default Pass  : password
+
+================================================================================
+💡 QUICK LOGIN STEPS:
+1. Master Admin : Go to http://localhost:3000/admin/login -> Enter SUPER-ADMIN / password
+2. Module Users : Go to http://localhost:3000/sms/login -> Enter ID (e.g. STU-503 or CSE-ADMIN) / password
+3. Gateway      : Visit http://localhost:3000/modules to select any active module workspace.
 ================================================================================
