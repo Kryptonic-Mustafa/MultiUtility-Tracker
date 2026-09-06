@@ -16,8 +16,9 @@ def is_port_in_use(port: int) -> bool:
 
 def focus_or_open_browser(url: str):
     """
-    Brings existing browser window to focus and reloads the active tab (F5),
-    preventing creation of duplicate tabs. Opens a browser only if not already open.
+    Brings existing browser window to focus and performs hard refresh (Ctrl+Shift+R / Ctrl+F5),
+    bypassing browser cache and preventing creation of duplicate tabs.
+    Opens a browser only if not already open.
     """
     if os.name == 'nt':
         ps_script = """
@@ -26,8 +27,10 @@ def focus_or_open_browser(url: str):
         $activated = $false
         foreach ($t in $titles) {
             if ($wshell.AppActivate($t)) {
-                Start-Sleep -Milliseconds 150
-                $wshell.SendKeys("{F5}")
+                Start-Sleep -Milliseconds 200
+                $wshell.SendKeys("^+r")
+                Start-Sleep -Milliseconds 100
+                $wshell.SendKeys("^{F5}")
                 $activated = $true
                 break
             }
@@ -42,7 +45,7 @@ def focus_or_open_browser(url: str):
                 timeout=3
             )
             if "REUSED" in res.stdout:
-                print("🌐 Focused existing browser window & reloaded active tab (F5)!")
+                print("🌐 Focused existing browser window & triggered Hard Cache Refresh (Ctrl+Shift+R)!")
                 return
         except Exception:
             pass
