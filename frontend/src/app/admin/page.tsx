@@ -315,108 +315,181 @@ export default function MasterAdminPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col lg:flex-row gap-6 items-start w-full min-h-[calc(100vh-6rem)] pb-24 lg:pb-0">
       
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 glass-panel rounded-3xl p-6 border border-purple-500/30 bg-gradient-to-r from-[#0d1527] via-[#13102b] to-[#170a24]">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
-              <Shield className="w-3 h-3 text-purple-400" />
-              Master Control Layer (multiutility_master)
+      {/* DESKTOP SIDEBAR (lg:flex) */}
+      <aside className="hidden lg:flex flex-col w-72 shrink-0 glass-panel rounded-3xl p-5 border border-purple-500/30 bg-gradient-to-b from-[#0d1527] via-[#13102b] to-[#170a24] sticky top-6 shadow-2xl space-y-6">
+        {/* Brand / Logo Header */}
+        <div className="flex items-center gap-3 pb-5 border-b border-white/10">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500/30 to-indigo-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shadow-inner">
+            <Shield className="w-5 h-5 text-purple-400" />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-white tracking-tight">Master Governance</h2>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              multiutility_master
             </span>
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            Multi-Database & Platform Governance Panel
-          </h1>
-          <p className="text-xs text-gray-400 max-w-2xl mt-1">
-            Provision dynamic module databases, configure module switchers, inspect Master DB & Module DB schemas, and manage platform rules.
-          </p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
+        {/* Navigation Vertical Tabs */}
+        <div className="space-y-2">
+          <p className="text-[10px] font-black uppercase tracking-wider text-purple-400/70 px-2 mb-1">
+            Control Panels
+          </p>
+          
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 font-bold text-xs shadow-lg flex items-center gap-2 transition-all"
+            onClick={() => setActiveTab('MODULES')}
+            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all text-left ${
+              activeTab === 'MODULES'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-950/60 border border-purple-400/30 scale-[1.02]'
+                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+            }`}
           >
-            <FolderPlus className="w-4 h-4 text-purple-400" />
-            Provision New Module DB
+            <div className={`p-2 rounded-xl ${activeTab === 'MODULES' ? 'bg-white/20' : 'bg-purple-500/10 text-purple-400'}`}>
+              <Layers className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-extrabold">Module DB Registry</div>
+              <div className="text-[10px] opacity-75 font-normal">Order & Provision DBs</div>
+            </div>
           </button>
 
           <button
-            onClick={handleSaveConfig}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-purple-900/40 flex items-center gap-2 transition-all"
+            onClick={() => setActiveTab('DATABASE')}
+            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all text-left ${
+              activeTab === 'DATABASE'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-950/60 border border-purple-400/30 scale-[1.02]'
+                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+            }`}
           >
-            <Save className="w-4 h-4" />
+            <div className={`p-2 rounded-xl ${activeTab === 'DATABASE' ? 'bg-white/20' : 'bg-purple-500/10 text-purple-400'}`}>
+              <Database className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-extrabold">Multi-DB Inspector</div>
+              <div className="text-[10px] opacity-75 font-normal">Inspect & Edit Tables</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('USERS')}
+            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all text-left ${
+              activeTab === 'USERS'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-950/60 border border-purple-400/30 scale-[1.02]'
+                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            <div className={`p-2 rounded-xl ${activeTab === 'USERS' ? 'bg-white/20' : 'bg-purple-500/10 text-purple-400'}`}>
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-extrabold">Master Admins</div>
+              <div className="text-[10px] opacity-75 font-normal">Rights & Entitlements</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('SETTINGS')}
+            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all text-left ${
+              activeTab === 'SETTINGS'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-950/60 border border-purple-400/30 scale-[1.02]'
+                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            <div className={`p-2 rounded-xl ${activeTab === 'SETTINGS' ? 'bg-white/20' : 'bg-purple-500/10 text-purple-400'}`}>
+              <Settings className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-extrabold">Global Settings</div>
+              <div className="text-[10px] opacity-75 font-normal">System & AI Biometrics</div>
+            </div>
+          </button>
+        </div>
+
+        {/* Quick Actions Section */}
+        <div className="pt-4 border-t border-white/10 space-y-2">
+          <p className="text-[10px] font-black uppercase tracking-wider text-purple-400/70 px-2 mb-1">
+            Quick Actions
+          </p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="w-full px-3.5 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 font-bold text-xs shadow-md flex items-center gap-2 transition-all justify-start"
+          >
+            <FolderPlus className="w-4 h-4 text-purple-400 shrink-0" />
+            Provision Module DB
+          </button>
+          <button
+            onClick={handleSaveConfig}
+            className="w-full px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white font-bold text-xs shadow-md flex items-center gap-2 transition-all justify-start"
+          >
+            <Save className="w-4 h-4 shrink-0" />
             Save Master Config
           </button>
+        </div>
+
+        {/* Profile Card & Admin Logout */}
+        <div className="pt-4 border-t border-white/10 mt-auto space-y-3">
+          <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 border border-white/10">
+            <div className="w-8 h-8 rounded-full bg-purple-500/30 border border-purple-400/30 flex items-center justify-center text-purple-200 text-xs font-black">
+              {currentUser?.name ? currentUser.name[0].toUpperCase() : 'A'}
+            </div>
+            <div className="overflow-hidden">
+              <div className="text-xs font-bold text-white truncate">{currentUser?.name || 'Master Admin'}</div>
+              <div className="text-[10px] text-gray-400 truncate">{currentUser?.email || 'admin@master.local'}</div>
+            </div>
+          </div>
 
           <button
             onClick={handleLogout}
-            className="px-4 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs shadow-lg flex items-center gap-2 transition-all"
-            title="Log out from Master Admin Panel"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all"
           >
-            <LogOut className="w-4 h-4 text-rose-400" />
+            <LogOut className="w-4 h-4 text-rose-400 shrink-0" />
             Admin Logout
           </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 bg-gray-900/80 p-1.5 rounded-2xl border border-white/10 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('MODULES')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'MODULES'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          Module DB Registry & Ordering
-        </button>
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 w-full space-y-6 min-w-0">
 
-        <button
-          onClick={() => {
-            setActiveTab('DATABASE');
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'DATABASE'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Database className="w-4 h-4" />
-          Multi-DB Inspector & Editor
-        </button>
+        {/* Dynamic Header Banner */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel rounded-3xl p-6 border border-purple-500/30 bg-gradient-to-r from-[#0d1527] via-[#13102b] to-[#170a24]">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+                <Shield className="w-3 h-3 text-purple-400" />
+                Master Control Layer (multiutility_master)
+              </span>
+            </div>
+            <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              Multi-Database Governance
+            </h1>
+            <p className="text-xs text-gray-400 max-w-xl mt-1">
+              Provision dynamic module databases, configure switcher options, inspect schemas, and manage global settings.
+            </p>
+          </div>
 
-        <button
-          onClick={() => {
-            setActiveTab('USERS');
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'USERS'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          Master Admins & Module Entitlements
-        </button>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 font-bold text-xs shadow-lg flex items-center gap-2 transition-all"
+            >
+              <FolderPlus className="w-4 h-4 text-purple-400" />
+              <span className="hidden sm:inline">Provision New Module DB</span>
+              <span className="sm:hidden">New DB</span>
+            </button>
 
-        <button
-          onClick={() => setActiveTab('SETTINGS')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'SETTINGS'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          Global Master Settings
-        </button>
-      </div>
+            <button
+              onClick={handleSaveConfig}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-purple-900/40 flex items-center gap-2 transition-all"
+            >
+              <Save className="w-4 h-4" />
+              <span className="hidden sm:inline">Save Config</span>
+            </button>
+          </div>
+        </div>
 
       {/* TAB 1: MODULE DB REGISTRY & ORDERING */}
       {activeTab === 'MODULES' && (
@@ -682,6 +755,59 @@ export default function MasterAdminPage() {
           </div>
         </div>
       )}
+
+      </div>
+
+      {/* MOBILE BOTTOM NAVIGATION DRAWER / SHELF (lg:hidden) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] glass-panel border-t border-purple-500/30 bg-[#0a0f1d]/95 backdrop-blur-xl px-3 py-2 shadow-2xl flex items-center justify-around">
+        <button
+          onClick={() => setActiveTab('MODULES')}
+          className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all ${
+            activeTab === 'MODULES'
+              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-md shadow-purple-950/50 scale-105 font-bold'
+              : 'text-gray-400 hover:text-white font-medium'
+          }`}
+        >
+          <Layers className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Modules</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('DATABASE')}
+          className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all ${
+            activeTab === 'DATABASE'
+              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-md shadow-purple-950/50 scale-105 font-bold'
+              : 'text-gray-400 hover:text-white font-medium'
+          }`}
+        >
+          <Database className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Inspector</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('USERS')}
+          className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all ${
+            activeTab === 'USERS'
+              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-md shadow-purple-950/50 scale-105 font-bold'
+              : 'text-gray-400 hover:text-white font-medium'
+          }`}
+        >
+          <Users className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Admins</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('SETTINGS')}
+          className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all ${
+            activeTab === 'SETTINGS'
+              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-md shadow-purple-950/50 scale-105 font-bold'
+              : 'text-gray-400 hover:text-white font-medium'
+          }`}
+        >
+          <Settings className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Settings</span>
+        </button>
+      </nav>
 
       {/* PROVISION NEW MODULE DB MODAL */}
       {showCreateModal && (
