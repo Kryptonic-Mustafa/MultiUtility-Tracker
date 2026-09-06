@@ -422,7 +422,7 @@ export default function Navbar() {
 
                     <div className="space-y-1">
                       <Link
-                        href={currentMod.id === 'sms' ? '/sms/profile' : `/${currentMod.id}`}
+                        href={currentMod.id !== 'gateway' ? `/${currentMod.id}/profile` : '/sms/profile'}
                         onClick={() => setMenuOpen(false)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-200 hover:text-white hover:bg-slate-800 transition-colors"
                       >
