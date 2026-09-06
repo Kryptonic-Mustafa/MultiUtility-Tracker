@@ -16,18 +16,8 @@ export default function Navbar() {
 
   useEffect(() => {
     const syncUser = () => {
-      const savedUser = localStorage.getItem('multiutility_user');
       const savedAdmin = localStorage.getItem('master_admin_session');
-
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser);
-          if (parsed && (parsed.user_id || parsed.id)) {
-            setCurrentUser(parsed);
-            return;
-          }
-        } catch (e) {}
-      }
+      const savedUser = localStorage.getItem('multiutility_user');
 
       if (savedAdmin) {
         try {
@@ -39,8 +29,18 @@ export default function Navbar() {
               email: admin.email || 'superadmin@university.edu',
               role: admin.role || 'SUPER_ADMIN',
               is_admin: true,
-              dept_id: 'MASTER'
+              dept_id: 'ALL'
             });
+            return;
+          }
+        } catch (e) {}
+      }
+
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (parsed && (parsed.user_id || parsed.id)) {
+            setCurrentUser(parsed);
             return;
           }
         } catch (e) {}
@@ -85,7 +85,7 @@ export default function Navbar() {
           window.location.href = '/admin/login';
         } else {
           showToast('Logged out of all sessions successfully', 'info', 'Logout Successful');
-          router.replace('/sms/login');
+          window.location.href = '/modules';
         }
       }
     });
@@ -312,16 +312,7 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
-            ) : (
-              !isLoginPage && (
-                <Link
-                  href="/sms/login"
-                  className="px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 shadow-md shadow-indigo-600/20 transition-all"
-                >
-                  Login
-                </Link>
-              )
-            )}
+            ) : null}
           </div>
 
         </div>
