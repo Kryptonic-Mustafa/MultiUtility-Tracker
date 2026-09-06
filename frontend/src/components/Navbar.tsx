@@ -16,15 +16,31 @@ export default function Navbar() {
 
   useEffect(() => {
     const syncUser = () => {
-      const isAdminPath = pathname.startsWith('/admin');
-      const savedKey = isAdminPath ? 'master_admin_session' : 'multiutility_user';
-      const saved = localStorage.getItem(savedKey);
-      
-      if (saved) {
+      const savedUser = localStorage.getItem('multiutility_user');
+      const savedAdmin = localStorage.getItem('master_admin_session');
+
+      if (savedUser) {
         try {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.user_id) {
+          const parsed = JSON.parse(savedUser);
+          if (parsed && (parsed.user_id || parsed.id)) {
             setCurrentUser(parsed);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      if (savedAdmin) {
+        try {
+          const admin = JSON.parse(savedAdmin);
+          if (admin && (admin.user_id || admin.admin_id)) {
+            setCurrentUser({
+              user_id: admin.user_id || admin.admin_id || 'SUPER-ADMIN',
+              name: admin.name || 'Master Admin',
+              email: admin.email || 'superadmin@university.edu',
+              role: admin.role || 'SUPER_ADMIN',
+              is_admin: true,
+              dept_id: 'MASTER'
+            });
             return;
           }
         } catch (e) {}

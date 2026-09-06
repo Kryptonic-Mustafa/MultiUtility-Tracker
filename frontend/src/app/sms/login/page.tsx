@@ -176,7 +176,8 @@ function SmsLoginComponent() {
       localStorage.setItem('multiutility_user', JSON.stringify(data.user));
 
       showToast(`Welcome back, ${data.user.name || accountId}!`, 'success', 'Login Successful');
-      router.push('/sms');
+      const targetUrl = searchParams.get('redirect') || '/sms';
+      router.push(targetUrl);
 
     } catch (err: any) {
       const errMsg = err.message || "Invalid credentials.";
