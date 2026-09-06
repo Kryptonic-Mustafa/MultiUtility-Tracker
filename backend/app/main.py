@@ -72,7 +72,13 @@ def seed_department_admins_and_principals(db):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing TiDB Cloud MySQL tables...")
+    logger.info("Initializing Master DB (multiutility_master) and Module DBs...")
+    from backend.app.core.db_manager import init_master_database
+    
+    # 1. Initialize Master DB & Seed Master Super Admin
+    init_master_database()
+    
+    # 2. Initialize Module #1 DB (student_tracker / module_sms)
     Base.metadata.create_all(bind=engine)
     
     # Auto-add missing columns to existing MySQL tables
@@ -95,7 +101,7 @@ async def lifespan(app: FastAPI):
         except Exception:
             pass
             
-    logger.info("Database tables verified.")
+    logger.info("Master DB & Module DB tables verified.")
 
     db = SessionLocal()
     try:
