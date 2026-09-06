@@ -49,7 +49,7 @@ const DEFAULT_MODULES = [
 
 export default function ModulesPage() {
   const [modules, setModules] = useState<any[]>(DEFAULT_MODULES);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchConfig = async () => {
