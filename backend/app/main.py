@@ -168,6 +168,8 @@ def seed_mustafa_accounts_across_all_modules():
     for acc in module_accounts:
         try:
             ensure_database_exists(acc["db_name"])
+            mod_engine = get_db_engine(acc["db_name"])
+            Base.metadata.create_all(bind=mod_engine)
             db = get_db_session(acc["db_name"])
             
             user = db.query(UserModel).filter(
@@ -190,8 +192,14 @@ def seed_mustafa_accounts_across_all_modules():
                 db.add(user)
                 db.flush()
             else:
+                user.user_id = acc["user_id"]
+                user.name = acc["name"]
                 user.email = acc["email"]
+                user.role = acc["role"]
+                user.dept_id = acc["dept_id"]
+                user.assigned_modules_csv = acc["assigned_modules"]
                 user.password_hash = pwd_hash
+                db.flush()
 
             if acc.get("is_student"):
                 stu = db.query(StudentDetailModel).filter(StudentDetailModel.user_id == user.user_id).first()
