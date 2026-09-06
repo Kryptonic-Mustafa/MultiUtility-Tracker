@@ -5,14 +5,26 @@ All accounts below are seeded into the Cloud Database (TiDB Cloud MySQL).
 System Default Password for ALL test accounts is: "password"
 
 --------------------------------------------------------------------------------
+⭐ UNIVERSAL MUSTAFA DEMO LOGIN CREDENTIAL (WORKS ACROSS ALL MODULES):
+--------------------------------------------------------------------------------
+• Primary Email : mustafa@gmail.com
+• Password      : password
+• Access Scope  : 
+  - Master Admin Portal  : Login as Master Super Admin (MUSTAFA-ADMIN / mustafa@gmail.com)
+  - SMS Module           : Login as Student (STU-503 / mustafa@gmail.com)
+  - HR Module            : Login as Senior HR Lead (EMP-503 / mustafa@gmail.com)
+  - Library Module       : Login as Head Librarian (LIB-503 / mustafa@gmail.com)
+  - Hostel Module        : Login as Chief Warden (HST-503 / mustafa@gmail.com)
+
+--------------------------------------------------------------------------------
 📍 SYSTEM PORTAL ACCESS URLS:
 --------------------------------------------------------------------------------
 • 👑 Master Governance Panel : http://localhost:3000/admin/login
 • 🌐 Scoped Module Gateway    : http://localhost:3000/modules
 • 🎓 School Management (SMS)  : http://localhost:3000/sms/login
-• 💼 HR & Payroll Management  : http://localhost:3000/hr
-• 📚 Digital Library System   : http://localhost:3000/library
-• 🚌 Hostel & Fleet Logistics : http://localhost:3000/hostel
+• 💼 HR & Payroll Management  : http://localhost:3000/hr/login
+• 📚 Digital Library System   : http://localhost:3000/library/login
+• 🚌 Hostel & Fleet Logistics : http://localhost:3000/hostel/login
 
 ================================================================================
 👑 0. MASTER PROJECT SUPER ADMIN PORTAL (ISOLATED GOVERNANCE LAYER)
@@ -21,9 +33,8 @@ System Default Password for ALL test accounts is: "password"
 • System Rights   : Full Master Control (Dynamic Module DB Provisioning, Schema Inspector, Global Rules)
 
   Credentials:
-  - User ID       : SUPER-ADMIN
-  - Email         : superadmin@university.edu
-  - Password      : password
+  - User ID / Email : mustafa@gmail.com (or MUSTAFA-ADMIN / SUPER-ADMIN)
+  - Password        : password
 
 ================================================================================
 🎓 1. SCHOOL MANAGEMENT SYSTEM (SMS) & BIOMETRIC ATTENDANCE PORTAL
@@ -31,53 +42,54 @@ System Default Password for ALL test accounts is: "password"
 • Portal URL      : http://localhost:3000/sms/login
 • Default Pass    : password
 
-  A. Department Admins (Full Management: Add/Edit/Delete Students, Faculty & HODs):
+  A. Primary Student Account (Mustafa):
+     • Email / ID : mustafa@gmail.com (or STU-503)
+     • Name       : Mustafa Aliasgar Chhabrawala (CSE, Year 2, Section A)
+
+  B. Department Admins (Full Management: Add/Edit/Delete Students, Faculty & HODs):
      • User ID: CSE-ADMIN   | Dept: Computer Science & Engineering (CSE)
      • User ID: ECE-ADMIN   | Dept: Electronics & Communication (ECE)
      • User ID: MECH-ADMIN  | Dept: Mechanical Engineering (MECH)
      • User ID: IT-ADMIN    | Dept: Information Technology (IT)
      • User ID: CIVIL-ADMIN | Dept: Civil Engineering (CIVIL)
 
-  B. Principals & Executive Viewers (College-wide Read-Only Inspection):
+  C. Principals & Executive Viewers:
      • User ID: COLLEGE-PRINCIPAL | Name: Dr. K. V. Subramaniam (All Depts Viewer)
      • User ID: CSE-PRINCIPAL     | Name: Dr. Arvind Rao (CSE Dept Viewer)
 
-  C. Department HODs & Faculty Members:
+  D. Department HODs & Faculty Members:
      • User ID: HOD-CSE-01   | Name: Dr. Rajesh Sharma    | Dept: CSE (AI & Data Science)
      • User ID: HOD-ECE-01   | Name: Dr. Suresh Nair      | Dept: ECE (VLSI Design)
      • User ID: TCH-CSE-01   | Name: Prof. Anita Roy      | Dept: CSE (Algorithms)
      • User ID: TCH-ECE-01   | Name: Prof. Neha Gupta     | Dept: ECE (Embedded Systems)
-     • User ID: SUB-CSE-01   | Name: Mr. Vikram Singh     | Role: Sub-Teacher (Python Lab)
-     • User ID: STAFF-01     | Name: Mrs. Kavita Saxena   | Role: Academic Staff
 
-  D. Student Accounts (Student View: Batchmates, Faculty Roster, Attendance Log):
-     • User ID: STU-503 (or mustafa@university.edu) | Name: Mustafa Aliasgar Chhabrawala (CSE, Yr 2)
+  E. Other Student Accounts:
      • User ID: STU-102 (or rahul@university.edu)   | Name: Rahul Verma (CSE, Yr 2)
      • User ID: STU-103 (or priya@university.edu)   | Name: Priya Patel (CSE, Yr 2)
      • User ID: STU-201 (or rohan@university.edu)   | Name: Rohan Iyer (ECE, Yr 2)
-     • User ID: STU-301 (or dev@university.edu)     | Name: Dev Kulkarni (MECH, Yr 3)
 
 ================================================================================
 💼 2. HR & PAYROLL MANAGEMENT SYSTEM (MODULE #2)
 ================================================================================
-• Module URL      : http://localhost:3000/hr
+• Module URL      : http://localhost:3000/hr/login
 • Target DB       : module_hr
 • Scope           : Employee Onboarding, Payslip Generator, Leave Approvals, Salary Ledger
 
   Credentials:
+  - Email / ID    : mustafa@gmail.com (or EMP-503) | Name: Mustafa Chhabrawala | Role: Senior HR Lead
   - User ID       : EMP-101 | Name: Dr. Sarah Jenkins  | Designation: Senior Professor
   - User ID       : EMP-102 | Name: Marcus Vance       | Designation: Assistant Professor
-  - User ID       : EMP-103 | Name: Elena Rostova      | Designation: Lab Administrator
   - Default Pass  : password
 
 ================================================================================
 📚 3. DIGITAL LIBRARY SYSTEM (MODULE #3)
 ================================================================================
-• Module URL      : http://localhost:3000/library
+• Module URL      : http://localhost:3000/library/login
 • Target DB       : module_library
 • Scope           : Book Barcode Search, Issue/Return Desk, Overdue Fine Calculator, PDFs
 
   Credentials:
+  - Email / ID    : mustafa@gmail.com (or LIB-503) | Name: Mustafa Chhabrawala | Role: Head Librarian
   - Borrower ID   : STU-1001 | Name: Alex Johnson   | Book: Effective Java (3rd Ed)
   - Borrower ID   : STU-1005 | Name: David Miller   | Book: Artificial Intelligence
   - Default Pass  : password
@@ -85,19 +97,19 @@ System Default Password for ALL test accounts is: "password"
 ================================================================================
 🚌 4. HOSTEL & FLEET LOGISTICS SYSTEM (MODULE #4)
 ================================================================================
-• Module URL      : http://localhost:3000/hostel
+• Module URL      : http://localhost:3000/hostel/login
 • Target DB       : module_hostel
 • Scope           : Dormitory Bed Allocation, Live Bus GPS Tracking, Mess Passes, Visitor Passes
 
   Credentials:
+  - Email / ID    : mustafa@gmail.com (or HST-503) | Name: Mustafa Chhabrawala | Role: Chief Hostel Warden
   - Dorm Room     : A-201 (Alpha Block) & B-104 (Beta Block)
   - Fleet Routes  : BUS-01 (North City), BUS-02 (South Shuttle), BUS-03 (Metro Link)
-  - Gate Pass ID  : GP-901 (Arthur Pendelton - Family Visit)
   - Default Pass  : password
 
 ================================================================================
 💡 QUICK LOGIN STEPS:
-1. Master Admin : Go to http://localhost:3000/admin/login -> Enter SUPER-ADMIN / password
-2. Module Users : Go to http://localhost:3000/sms/login -> Enter ID (e.g. STU-503 or CSE-ADMIN) / password
-3. Gateway      : Visit http://localhost:3000/modules to select any active module workspace.
+1. Universal Login : Use email "mustafa@gmail.com" and password "password" on ANY portal.
+2. Master Admin    : Go to http://localhost:3000/admin/login -> Enter mustafa@gmail.com / password
+3. Module Gateway  : Visit http://localhost:3000/modules to select any active workspace.
 ================================================================================
