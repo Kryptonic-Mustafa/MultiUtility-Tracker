@@ -3,7 +3,7 @@
 import React, { Suspense } from 'react';
 import ModuleLoginCard from '@/components/ModuleLoginCard';
 
-export default function SmsLoginPage() {
+export default function LibraryLoginPage() {
   return (
     <div className="min-h-[75vh] flex items-center justify-center relative py-6">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -14,10 +14,10 @@ export default function SmsLoginPage() {
         </div>
       }>
         <ModuleLoginCard
-          moduleId="sms"
-          title="SMS Module Gateway"
-          subtitle="School Management & Biometric Attendance System"
-          defaultRedirect="/sms"
+          moduleId="library"
+          title="Digital Library Gateway"
+          subtitle="Book Catalog, ISBN Barcode Search & Loan Management System"
+          defaultRedirect="/library"
           themeColor="indigo"
         />
       </Suspense>
