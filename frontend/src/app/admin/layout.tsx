@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (adminSession) {
       try {
         const parsed = JSON.parse(adminSession);
-        const isAdmin = parsed && (parsed.is_admin || parsed.role === 'SUPER_ADMIN' || parsed.role === 'ADMIN');
+        const isAdmin = parsed && parsed.user_id && (parsed.is_admin || parsed.role === 'SUPER_ADMIN' || parsed.role === 'ADMIN');
         if (isAdmin) {
           setIsAuthenticated(true);
           setIsChecking(false);
@@ -32,7 +32,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       } catch (e) {}
     }
 
-    // Not authenticated as Master Admin -> Throw directly to /admin/login
+    // Not authenticated as Master Admin -> Purge bad data & throw directly to /admin/login
+    localStorage.removeItem('master_admin_session');
+    localStorage.removeItem('master_admin_token');
     setIsAuthenticated(false);
     setIsChecking(false);
     router.replace('/admin/login');

@@ -18,16 +18,19 @@ export default function Navbar() {
     const syncUser = () => {
       const isAdminPath = pathname.startsWith('/admin');
       const savedKey = isAdminPath ? 'master_admin_session' : 'multiutility_user';
-      const saved = localStorage.getItem(savedKey) || localStorage.getItem('multiutility_user') || localStorage.getItem('master_admin_session');
+      const saved = localStorage.getItem(savedKey);
+      
       if (saved) {
         try {
-          setCurrentUser(JSON.parse(saved));
-        } catch (e) {
-          setCurrentUser(null);
-        }
-      } else {
-        setCurrentUser(null);
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.user_id) {
+            setCurrentUser(parsed);
+            return;
+          }
+        } catch (e) {}
       }
+      
+      setCurrentUser(null);
     };
 
     syncUser();
