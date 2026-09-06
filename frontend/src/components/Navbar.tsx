@@ -399,7 +399,9 @@ export default function Navbar() {
                       <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
                     </p>
                     <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider">
-                      {currentUser.role || 'User'}
+                      {isModulesPage && currentUser.active_module
+                        ? `${currentUser.role || 'User'} • ${currentUser.active_module.toUpperCase()}`
+                        : currentUser.role || 'User'}
                     </p>
                   </div>
                 </button>

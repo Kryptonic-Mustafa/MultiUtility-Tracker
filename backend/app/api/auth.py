@@ -15,6 +15,7 @@ class LoginRequest(BaseModel):
     account_id_or_email: str
     password: str
     is_admin: bool = False
+    module_id: str = "sms"
 
 class UpdateProfileRequest(BaseModel):
     user_id: str
@@ -55,6 +56,7 @@ def create_access_token(data: dict):
 @router.post("/login")
 def login(req: LoginRequest, db: Session = Depends(get_db_sync)):
     account = req.account_id_or_email.strip()
+    mod_id = (req.module_id or "sms").strip().lower()
     
     # 0. Fast-path & Master DB Authentication for Master Super Admin
     if req.is_admin or account.upper() in ["SUPER-ADMIN", "SUPERADMIN@UNIVERSITY.EDU"]:
@@ -108,59 +110,89 @@ def login(req: LoginRequest, db: Session = Depends(get_db_sync)):
             else:
                 raise HTTPException(status_code=401, detail="Invalid Master Admin password")
 
-    # 1. Try checking AdminModel in Module DB
+    # Determine target physical module database name
+    if mod_id == "sms":
+        target_db = "student_tracker"
+    elif mod_id == "hr":
+        target_db = "module_hr"
+    elif mod_id == "library":
+        target_db = "module_library"
+    elif mod_id == "hostel":
+        target_db = "module_hostel"
+    else:
+        target_db = f"module_{mod_id}"
+
+    from backend.app.core.db_manager import get_db_session
+    module_session = None
     try:
-        admin = db.query(AdminModel).filter(
-            (AdminModel.admin_id == account) | (AdminModel.email == account)
-        ).first()
-        
-        if admin:
-            valid_pwd = (req.password == "password") or verify_password(req.password, admin.password_hash)
-            if valid_pwd:
-                token = create_access_token({"sub": admin.admin_id, "role": "ADMIN", "is_admin": True})
-                return {
-                    "token": token,
-                    "user": {
-                        "user_id": admin.admin_id,
-                        "name": admin.name,
-                        "email": admin.email,
-                        "role": "ADMIN",
-                        "is_admin": True,
-                        "assigned_modules": ["SMS", "ADMIN_PANEL"]
+        module_session = get_db_session(target_db)
+        target_db_used = module_session
+    except Exception:
+        target_db_used = db
+
+    try:
+        # 1. Try checking AdminModel in Module DB
+        try:
+            admin = target_db_used.query(AdminModel).filter(
+                (AdminModel.admin_id == account) | (AdminModel.email == account)
+            ).first()
+            
+            if admin:
+                valid_pwd = (req.password == "password") or verify_password(req.password, admin.password_hash)
+                if valid_pwd:
+                    token = create_access_token({"sub": admin.admin_id, "role": "ADMIN", "is_admin": True})
+                    return {
+                        "token": token,
+                        "user": {
+                            "user_id": admin.admin_id,
+                            "name": admin.name,
+                            "email": admin.email,
+                            "role": "ADMIN",
+                            "is_admin": True,
+                            "assigned_modules": ["SMS", "ADMIN_PANEL"]
+                        }
                     }
-                }
-    except Exception as e:
-        print(f"Error querying AdminModel: {e}")
+        except Exception as e:
+            print(f"Error querying AdminModel in {target_db}: {e}")
 
-    # 2. Check UserModel
-    user = db.query(UserModel).filter(
-        (UserModel.user_id == account) | (UserModel.email == account)
-    ).first()
+        # 2. Check UserModel in Module DB
+        user = target_db_used.query(UserModel).filter(
+            (UserModel.user_id == account) | (UserModel.email == account)
+        ).first()
 
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials. Please check User ID and Password.")
+        # If user not found in target module DB, try fallback to default SMS DB
+        if not user and target_db_used != db:
+            user = db.query(UserModel).filter(
+                (UserModel.user_id == account) | (UserModel.email == account)
+            ).first()
 
-    valid_pwd = (req.password == "password") or verify_password(req.password, user.password_hash)
-    if not valid_pwd:
-        raise HTTPException(status_code=401, detail="Invalid credentials. Please check User ID and Password.")
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials. Please check User ID and Password.")
 
-    modules_list = [m.strip() for m in user.assigned_modules_csv.split(",") if m.strip()] if user.assigned_modules_csv else ["SMS"]
-    token = create_access_token({"sub": user.user_id, "role": user.role, "is_admin": user.role in ["ADMIN", "SUPER_ADMIN"]})
+        valid_pwd = (req.password == "password") or verify_password(req.password, user.password_hash)
+        if not valid_pwd:
+            raise HTTPException(status_code=401, detail="Invalid credentials. Please check User ID and Password.")
 
-    return {
-        "token": token,
-        "user": {
-            "user_id": user.user_id,
-            "name": user.name,
-            "email": user.email,
-            "phone": getattr(user, 'phone', ''),
-            "role": user.role,
-            "dept_id": user.dept_id,
-            "is_admin": user.role in ["ADMIN", "SUPER_ADMIN"],
-            "assigned_modules": modules_list,
-            "profile_image_url": user.profile_image_url
+        modules_list = [m.strip() for m in user.assigned_modules_csv.split(",") if m.strip()] if user.assigned_modules_csv else ["SMS"]
+        token = create_access_token({"sub": user.user_id, "role": user.role, "is_admin": user.role in ["ADMIN", "SUPER_ADMIN"]})
+
+        return {
+            "token": token,
+            "user": {
+                "user_id": user.user_id,
+                "name": user.name,
+                "email": user.email,
+                "phone": getattr(user, 'phone', ''),
+                "role": user.role,
+                "dept_id": user.dept_id,
+                "is_admin": user.role in ["ADMIN", "SUPER_ADMIN"],
+                "assigned_modules": modules_list,
+                "profile_image_url": user.profile_image_url
+            }
         }
-    }
+    finally:
+        if module_session:
+            module_session.close()
 
 @router.get("/profile/{user_id}")
 def get_user_profile(user_id: str, db: Session = Depends(get_db_sync)):

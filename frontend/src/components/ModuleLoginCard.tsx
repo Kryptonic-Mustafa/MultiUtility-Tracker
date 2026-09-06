@@ -178,7 +178,8 @@ export default function ModuleLoginCard({
         body: JSON.stringify({
           account_id_or_email: accountId,
           password: password,
-          is_admin: false
+          is_admin: false,
+          module_id: moduleId
         })
       });
 
