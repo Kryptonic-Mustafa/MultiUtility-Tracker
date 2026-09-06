@@ -21,14 +21,16 @@ export default function SmsLayout({ children }: { children: React.ReactNode }) {
 
     const token = localStorage.getItem('multiutility_token');
     const user = localStorage.getItem('multiutility_user');
+    const masterAdmin = localStorage.getItem('master_admin_session');
 
-    if (token && user) {
+    if ((token && user) || masterAdmin) {
       try {
-        const parsedUser = JSON.parse(user);
-        if (!parsedUser || !parsedUser.user_id) {
+        const rawUser = user || masterAdmin;
+        const parsedUser = JSON.parse(rawUser!);
+        if (!parsedUser || (!parsedUser.user_id && !parsedUser.admin_id)) {
           throw new Error("Invalid session data");
         }
-        const isSuperOrDeptAdmin = parsedUser.role === 'ADMIN' || parsedUser.is_admin;
+        const isSuperOrDeptAdmin = parsedUser.role === 'ADMIN' || parsedUser.role === 'SUPER_ADMIN' || parsedUser.is_admin;
         if (!isSuperOrDeptAdmin) {
           if (pathname === '/sms/departments') {
             router.replace('/sms');
@@ -45,9 +47,11 @@ export default function SmsLayout({ children }: { children: React.ReactNode }) {
       } catch (e) {}
     }
 
-    // Purge bad or missing SMS session data and redirect
+    // Purge ALL bad or missing session data and redirect
     localStorage.removeItem('multiutility_token');
     localStorage.removeItem('multiutility_user');
+    localStorage.removeItem('master_admin_session');
+    localStorage.removeItem('master_admin_token');
     setIsAuthenticated(false);
     setIsChecking(false);
     router.replace('/sms/login');

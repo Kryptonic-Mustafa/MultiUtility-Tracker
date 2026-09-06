@@ -19,6 +19,11 @@ export default function HostelLayout({ children }: { children: React.ReactNode }
       return;
     }
 
+    // Purge any residual tokens & redirect unauthenticated users directly to login
+    localStorage.removeItem('multiutility_token');
+    localStorage.removeItem('multiutility_user');
+    localStorage.removeItem('master_admin_session');
+    localStorage.removeItem('master_admin_token');
     setIsAuthenticated(false);
     setIsChecking(false);
     router.replace('/sms/login?redirect=/hostel');

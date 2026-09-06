@@ -71,8 +71,11 @@ export default function MasterAdminPage() {
       type: 'danger',
       icon: 'logout',
       onConfirm: () => {
+        // Purge ALL sessions completely
         localStorage.removeItem('master_admin_session');
         localStorage.removeItem('master_admin_token');
+        localStorage.removeItem('multiutility_token');
+        localStorage.removeItem('multiutility_user');
         showToast('Logged out from Master Admin Panel', 'info', 'Admin Logout');
         window.location.href = '/admin/login';
       }
