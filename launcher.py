@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import socket
+import tempfile
 import subprocess
 import webbrowser
 import signal
@@ -9,6 +10,7 @@ import atexit
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
+USER_DATA_DIR = os.path.join(tempfile.gettempdir(), "multiutility_desktop_profile")
 
 backend_proc = None
 frontend_proc = None
@@ -86,6 +88,8 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 def focus_or_launch_app(url: str):
     global window_proc
+    os.makedirs(USER_DATA_DIR, exist_ok=True)
+
     if os.name == 'nt':
         ps_script = """
         $wshell = New-Object -ComObject WScript.Shell
@@ -126,8 +130,15 @@ def focus_or_launch_app(url: str):
     for path in chrome_paths:
         if os.path.exists(path):
             try:
-                window_proc = subprocess.Popen([path, f"--app={url}"])
-                print(f"🖥️ Launched application window using {os.path.basename(path)}")
+                cmd = [
+                    path,
+                    f"--app={url}",
+                    f"--user-data-dir={USER_DATA_DIR}",
+                    "--no-first-run",
+                    "--no-default-browser-check"
+                ]
+                window_proc = subprocess.Popen(cmd)
+                print(f"🖥️ Standalone Application Window launched with {os.path.basename(path)}")
                 return window_proc
             except Exception:
                 pass
@@ -178,11 +189,17 @@ def main():
     print("=" * 70)
     print(" 💡 Closing application window or pressing CTRL+C terminates all services cleanly.\n")
 
+    start_time = time.time()
     try:
         while True:
-            if window_proc and window_proc.poll() is not None:
-                print("\n🚪 Desktop application window closed by user. Terminating all services...")
-                break
+            if window_proc:
+                poll_res = window_proc.poll()
+                if poll_res is not None:
+                    if time.time() - start_time > 2.5:
+                        print("\n🚪 Desktop application window closed by user. Terminating all services...")
+                        break
+                    else:
+                        window_proc = None
             time.sleep(0.5)
     except KeyboardInterrupt:
         pass
