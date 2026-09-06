@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { 
   Shield, Layers, Database, Users, Settings, CheckCircle2, XCircle, 
   Edit3, Trash2, Plus, ArrowUp, ArrowDown, Save, Search, Lock, 
-  Sparkles, RefreshCw, Eye, AlertTriangle, KeyRound, Server, LogOut
+  Sparkles, RefreshCw, Eye, AlertTriangle, KeyRound, Server, LogOut,
+  FolderPlus, HardDrive
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
@@ -23,7 +24,20 @@ export default function MasterAdminPage() {
   const [config, setConfig] = useState<any>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
+  // New Module Creation Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creatingModule, setCreatingModule] = useState(false);
+  const [newModForm, setNewModForm] = useState({
+    id: '',
+    title: '',
+    badge: '',
+    description: '',
+    icon: 'Layers'
+  });
+
   // Database Inspector State
+  const [databases, setDatabases] = useState<any[]>([]);
+  const [selectedDb, setSelectedDb] = useState<string>('student_tracker');
   const [tables, setTables] = useState<any[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('users');
   const [tableData, setTableData] = useState<any[]>([]);
@@ -78,7 +92,7 @@ export default function MasterAdminPage() {
     });
   };
 
-  // Fetch Config
+  // Fetch Config from Master DB
   const fetchConfig = async () => {
     setLoadingConfig(true);
     try {
@@ -94,30 +108,49 @@ export default function MasterAdminPage() {
     }
   };
 
-  // Fetch Tables List
-  const fetchTables = async () => {
+  // Fetch Available Databases
+  const fetchDatabases = async () => {
     try {
-      const res = await fetch(`http://${window.location.hostname}:8000/api/admin/tables`);
+      const res = await fetch(`http://${window.location.hostname}:8000/api/admin/databases`);
+      if (res.ok) {
+        const data = await res.json();
+        setDatabases(data);
+      }
+    } catch (e) {
+      console.error('Error fetching databases list:', e);
+    }
+  };
+
+  // Fetch Tables List for selected database
+  const fetchTables = async (dbName: string) => {
+    try {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/admin/tables?db_name=${dbName}`);
       if (res.ok) {
         const data = await res.json();
         setTables(data);
+        if (data.length > 0) {
+          setSelectedTable(data[0].name);
+        }
       }
     } catch (e) {
       console.error('Error fetching tables:', e);
     }
   };
 
-  // Fetch Table Data
-  const fetchTableData = async (tableName: string) => {
+  // Fetch Table Data for selected DB & table
+  const fetchTableData = async (dbName: string, tableName: string) => {
     setLoadingTable(true);
     try {
-      const res = await fetch(`http://${window.location.hostname}:8000/api/admin/table-data?table_name=${tableName}`);
+      const res = await fetch(`http://${window.location.hostname}:8000/api/admin/table-data?db_name=${dbName}&table_name=${tableName}`);
       if (res.ok) {
         const data = await res.json();
         setTableData(data);
+      } else {
+        setTableData([]);
       }
     } catch (e) {
       console.error('Error fetching table data:', e);
+      setTableData([]);
     } finally {
       setLoadingTable(false);
     }
@@ -125,14 +158,20 @@ export default function MasterAdminPage() {
 
   useEffect(() => {
     fetchConfig();
-    fetchTables();
+    fetchDatabases();
   }, []);
 
   useEffect(() => {
     if (activeTab === 'DATABASE' || activeTab === 'USERS') {
-      fetchTableData(selectedTable);
+      fetchTables(selectedDb);
     }
-  }, [activeTab, selectedTable]);
+  }, [activeTab, selectedDb]);
+
+  useEffect(() => {
+    if ((activeTab === 'DATABASE' || activeTab === 'USERS') && selectedTable) {
+      fetchTableData(selectedDb, selectedTable);
+    }
+  }, [activeTab, selectedDb, selectedTable]);
 
   // Handle Module Toggle & Ordering
   const handleToggleModule = (moduleId: string) => {
@@ -168,12 +207,45 @@ export default function MasterAdminPage() {
         body: JSON.stringify(config)
       });
       if (res.ok) {
-        showToast('System configuration saved successfully!', 'success', 'Config Saved');
+        showToast('System configuration saved to Master Database!', 'success', 'Config Saved');
       } else {
         showToast('Failed to save configuration', 'error');
       }
     } catch (e: any) {
       showToast(e.message || 'Error saving configuration', 'error');
+    }
+  };
+
+  // Provision Brand New Module DB
+  const handleCreateModuleDB = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newModForm.id.trim() || !newModForm.title.trim()) {
+      showToast('Please enter both Module ID and Title', 'error');
+      return;
+    }
+
+    setCreatingModule(true);
+    try {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/admin/modules/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newModForm)
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Provisioned new database '${data.db_name}' for module '${newModForm.title}'!`, 'success', 'Module DB Created');
+        setShowCreateModal(false);
+        setNewModForm({ id: '', title: '', badge: '', description: '', icon: 'Layers' });
+        fetchConfig();
+        fetchDatabases();
+      } else {
+        showToast(data.detail || 'Failed to provision module DB', 'error');
+      }
+    } catch (e: any) {
+      showToast(e.message || 'Error provisioning module DB', 'error');
+    } finally {
+      setCreatingModule(false);
     }
   };
 
@@ -187,13 +259,14 @@ export default function MasterAdminPage() {
     if (!editRow) return;
     setSavingRow(true);
     try {
-      const keyField = selectedTable === 'attendance_logs' ? 'id' : selectedTable === 'departments' ? 'dept_id' : 'user_id';
+      const keyField = selectedTable === 'attendance_logs' ? 'id' : selectedTable === 'departments' ? 'dept_id' : selectedTable === 'master_admins' ? 'id' : selectedTable === 'system_modules' ? 'id' : 'user_id';
       const keyValue = editRow[keyField];
 
       const res = await fetch(`http://${window.location.hostname}:8000/api/admin/table-data/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          db_name: selectedDb,
           table_name: selectedTable,
           key_field: keyField,
           key_value: keyValue,
@@ -202,9 +275,9 @@ export default function MasterAdminPage() {
       });
 
       if (res.ok) {
-        showToast(`Record in ${selectedTable} updated successfully`, 'success', 'Row Saved');
+        showToast(`Record in ${selectedTable} (${selectedDb}) updated successfully`, 'success', 'Row Saved');
         setEditRow(null);
-        fetchTableData(selectedTable);
+        fetchTableData(selectedDb, selectedTable);
       } else {
         const data = await res.json();
         showToast(data.detail || 'Failed to update record', 'error');
@@ -217,11 +290,11 @@ export default function MasterAdminPage() {
   };
 
   const handleDeleteRow = (row: any) => {
-    const keyField = selectedTable === 'attendance_logs' ? 'id' : selectedTable === 'departments' ? 'dept_id' : 'user_id';
+    const keyField = selectedTable === 'attendance_logs' ? 'id' : selectedTable === 'departments' ? 'dept_id' : selectedTable === 'master_admins' ? 'id' : selectedTable === 'system_modules' ? 'id' : 'user_id';
     const keyValue = row[keyField];
 
     confirmAction({
-      title: `Delete Record from ${selectedTable}`,
+      title: `Delete Record from ${selectedTable} (${selectedDb})`,
       message: `Are you sure you want to permanently delete record ${keyField} = "${keyValue}"?`,
       confirmText: 'Delete Record',
       cancelText: 'Cancel',
@@ -230,12 +303,12 @@ export default function MasterAdminPage() {
       onConfirm: async () => {
         try {
           const res = await fetch(
-            `http://${window.location.hostname}:8000/api/admin/table-data/delete?table_name=${selectedTable}&key_field=${keyField}&key_value=${keyValue}`,
+            `http://${window.location.hostname}:8000/api/admin/table-data/delete?db_name=${selectedDb}&table_name=${selectedTable}&key_field=${keyField}&key_value=${keyValue}`,
             { method: 'DELETE' }
           );
           if (res.ok) {
             showToast(`Deleted record ${keyValue} from ${selectedTable}`, 'success', 'Row Deleted');
-            fetchTableData(selectedTable);
+            fetchTableData(selectedDb, selectedTable);
           } else {
             showToast('Failed to delete record', 'error');
           }
@@ -274,25 +347,33 @@ export default function MasterAdminPage() {
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
               <Shield className="w-3 h-3 text-purple-400" />
-              Master Project Admin Control Panel
+              Master Control Layer (multiutility_master)
             </span>
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            System Modules, DB Inspector & Platform Governance
+            Multi-Database & Platform Governance Panel
           </h1>
           <p className="text-xs text-gray-400 max-w-2xl mt-1">
-            Full master control over system modules, display order, database tables, user entitlements, and global feature settings.
+            Provision dynamic module databases, configure module switchers, inspect Master DB & Module DB schemas, and manage platform rules.
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 font-bold text-xs shadow-lg flex items-center gap-2 transition-all"
+          >
+            <FolderPlus className="w-4 h-4 text-purple-400" />
+            Provision New Module DB
+          </button>
+
           <button
             onClick={handleSaveConfig}
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-purple-900/40 flex items-center gap-2 transition-all"
           >
             <Save className="w-4 h-4" />
-            Save System Config
+            Save Master Config
           </button>
 
           <button
@@ -317,13 +398,12 @@ export default function MasterAdminPage() {
           }`}
         >
           <Layers className="w-4 h-4" />
-          Modules & Display Ordering
+          Module DB Registry & Ordering
         </button>
 
         <button
           onClick={() => {
             setActiveTab('DATABASE');
-            setSelectedTable('users');
           }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'DATABASE'
@@ -332,13 +412,12 @@ export default function MasterAdminPage() {
           }`}
         >
           <Database className="w-4 h-4" />
-          Database Inspector & Editor
+          Multi-DB Inspector & Editor
         </button>
 
         <button
           onClick={() => {
             setActiveTab('USERS');
-            setSelectedTable('users');
           }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'USERS'
@@ -347,7 +426,7 @@ export default function MasterAdminPage() {
           }`}
         >
           <Users className="w-4 h-4" />
-          User Roles & Entitlements
+          Master Admins & Module Entitlements
         </button>
 
         <button
@@ -359,19 +438,28 @@ export default function MasterAdminPage() {
           }`}
         >
           <Settings className="w-4 h-4" />
-          Global Settings & Thresholds
+          Global Master Settings
         </button>
       </div>
 
-      {/* TAB 1: MODULES & DISPLAY ORDERING */}
+      {/* TAB 1: MODULE DB REGISTRY & ORDERING */}
       {activeTab === 'MODULES' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-purple-400" />
-              Configure System Modules & Navigation Order
-            </h3>
-            <span className="text-xs text-gray-400">Order dictates display sequence on Modules Selection Page</span>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-purple-400" />
+                Registered System Module Databases (Master DB)
+              </h3>
+              <p className="text-xs text-gray-400">Order dictates display sequence on Modules Selection Page</p>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-purple-600/80 hover:bg-purple-600 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Provision Module DB
+            </button>
           </div>
 
           {loadingConfig ? (
@@ -397,10 +485,14 @@ export default function MasterAdminPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="text-base font-bold text-white">{mod.title}</h4>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
                           {mod.badge}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+                          <HardDrive className="w-3 h-3" />
+                          DB: {mod.db_name || `module_${mod.id}`}
                         </span>
                         {mod.enabled ? (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -457,34 +549,54 @@ export default function MasterAdminPage() {
         </div>
       )}
 
-      {/* TAB 2: DATABASE INSPECTOR & LIVE TABLE EDITOR */}
+      {/* TAB 2 & 3: MULTI-DB INSPECTOR & TABLE EDITOR */}
       {(activeTab === 'DATABASE' || activeTab === 'USERS') && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            {/* Table Selector */}
-            <div className="flex items-center gap-3">
-              <label className="text-xs font-bold text-gray-300">Select Database Table:</label>
-              <select
-                value={selectedTable}
-                onChange={(e) => setSelectedTable(e.target.value)}
-                className="px-3.5 py-2 bg-gray-900 border border-slate-700 rounded-xl text-xs font-bold text-indigo-300 focus:outline-none focus:border-indigo-500"
-              >
-                {tables.map((t) => (
-                  <option key={t.name} value={t.name}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            {/* Database & Table Selectors */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1">
+                  <HardDrive className="w-3.5 h-3.5" />
+                  Database:
+                </label>
+                <select
+                  value={selectedDb}
+                  onChange={(e) => setSelectedDb(e.target.value)}
+                  className="px-3.5 py-2 bg-gray-900 border border-purple-500/40 rounded-xl text-xs font-bold text-purple-300 focus:outline-none focus:border-purple-500"
+                >
+                  {databases.map((db) => (
+                    <option key={db.db_name} value={db.db_name}>
+                      {db.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-300 uppercase tracking-wider">Table:</label>
+                <select
+                  value={selectedTable}
+                  onChange={(e) => setSelectedTable(e.target.value)}
+                  className="px-3.5 py-2 bg-gray-900 border border-slate-700 rounded-xl text-xs font-bold text-indigo-300 focus:outline-none focus:border-indigo-500"
+                >
+                  {tables.map((t) => (
+                    <option key={t.name} value={t.name}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Table Search */}
-            <div className="relative w-full sm:w-72">
+            <div className="relative w-full md:w-72">
               <input
                 type="text"
                 value={dbSearch}
                 onChange={(e) => setDbSearch(e.target.value)}
-                placeholder={`Search records in ${selectedTable}...`}
-                className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-slate-700 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                placeholder={`Search in ${selectedDb}.${selectedTable}...`}
+                className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-slate-700 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 font-mono"
               />
               <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
             </div>
@@ -498,7 +610,7 @@ export default function MasterAdminPage() {
               </div>
             ) : filteredTableData.length === 0 ? (
               <div className="p-12 text-center text-xs text-gray-400">
-                No records found in table <code className="text-indigo-400">{selectedTable}</code>.
+                No records found in table <code className="text-indigo-400">{selectedTable}</code> of database <code className="text-purple-400">{selectedDb}</code>.
               </div>
             ) : (
               <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
@@ -549,12 +661,12 @@ export default function MasterAdminPage() {
         </div>
       )}
 
-      {/* TAB 4: GLOBAL SETTINGS & THRESHOLDS */}
+      {/* TAB 4: GLOBAL MASTER SETTINGS */}
       {activeTab === 'SETTINGS' && (
         <div className="glass-panel rounded-3xl p-6 border border-white/10 space-y-6">
           <div className="flex items-center gap-2 pb-4 border-b border-white/10">
             <Settings className="w-5 h-5 text-purple-400" />
-            <h3 className="text-base font-bold text-white">Global System Settings & AI Biometrics</h3>
+            <h3 className="text-base font-bold text-white">Global Master Settings & AI Biometrics</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -595,6 +707,110 @@ export default function MasterAdminPage() {
         </div>
       )}
 
+      {/* PROVISION NEW MODULE DB MODAL */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-[#0f172a] border border-purple-500/40 rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-700">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-purple-400" />
+                Provision New Module Database
+              </h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-white">
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateModuleDB} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">Module ID (e.g. finance, payroll, inventory)</label>
+                <input
+                  type="text"
+                  value={newModForm.id}
+                  onChange={(e) => setNewModForm({ ...newModForm, id: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                  placeholder="e.g. payroll"
+                  className="w-full px-3.5 py-2.5 bg-gray-900 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-purple-500"
+                  required
+                />
+                <p className="text-[10px] text-purple-300 mt-1">
+                  Physical DB will be created automatically as: <code>module_{newModForm.id || 'id'}</code>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">Module Display Title</label>
+                <input
+                  type="text"
+                  value={newModForm.title}
+                  onChange={(e) => setNewModForm({ ...newModForm, title: e.target.value })}
+                  placeholder="e.g. Payroll & Salary Management"
+                  className="w-full px-3.5 py-2.5 bg-gray-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">Badge Tag</label>
+                  <input
+                    type="text"
+                    value={newModForm.badge}
+                    onChange={(e) => setNewModForm({ ...newModForm, badge: e.target.value })}
+                    placeholder="e.g. Module #5"
+                    className="w-full px-3.5 py-2.5 bg-gray-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">Module Icon</label>
+                  <select
+                    value={newModForm.icon}
+                    onChange={(e) => setNewModForm({ ...newModForm, icon: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-gray-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="Layers">Layers</option>
+                    <option value="Briefcase">Briefcase</option>
+                    <option value="Building2">Building</option>
+                    <option value="BookOpen">Book</option>
+                    <option value="Bus">Bus Logistics</option>
+                    <option value="Shield">Shield Security</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">Description Summary</label>
+                <textarea
+                  rows={2}
+                  value={newModForm.description}
+                  onChange={(e) => setNewModForm({ ...newModForm, description: e.target.value })}
+                  placeholder="Describe module functionality and features..."
+                  className="w-full px-3.5 py-2 bg-gray-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-4 border-t border-slate-700 justify-end">
+                <button
+                  type="button"
+                  disabled={creatingModule}
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-700 text-gray-300 font-semibold text-xs hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingModule}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-lg flex items-center gap-2"
+                >
+                  {creatingModule ? 'Provisioning DB...' : 'Create & Provision Module DB'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ROW EDIT MODAL */}
       {editRow && (
         <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
@@ -602,7 +818,7 @@ export default function MasterAdminPage() {
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-700">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-indigo-400" />
-                Edit Record in {selectedTable}
+                Edit Record in {selectedDb}.{selectedTable}
               </h3>
               <button onClick={() => setEditRow(null)} className="text-gray-400 hover:text-white">
                 ✕

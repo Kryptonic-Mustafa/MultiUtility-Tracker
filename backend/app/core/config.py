@@ -5,14 +5,24 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
 load_dotenv()
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "mysql+aiomysql://277XF19miZ6FU9s.root:fxr1XWkPoPgye73T@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/student_tracker"
-).split("?")[0]
+# Raw host connection URL without database name
+DB_BASE_URL = os.getenv(
+    "DB_BASE_URL",
+    "mysql+pymysql://277XF19miZ6FU9s.root:fxr1XWkPoPgye73T@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/"
+).rstrip("/") + "/"
+
+# Master Control Database URL
+MASTER_SYNC_DATABASE_URL = os.getenv(
+    "MASTER_SYNC_DATABASE_URL",
+    f"{DB_BASE_URL}multiutility_master"
+)
+
+# Default Module #1 Database URL (student_tracker / module_sms)
 SYNC_DATABASE_URL = os.getenv(
     "SYNC_DATABASE_URL",
-    "mysql+pymysql://277XF19miZ6FU9s.root:fxr1XWkPoPgye73T@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/student_tracker"
-).split("?")[0]
+    f"{DB_BASE_URL}student_tracker"
+)
+DATABASE_URL = SYNC_DATABASE_URL
 
 JWT_SECRET = os.getenv("JWT_SECRET", "multiutility_tracker_super_secret_key_2026")
 DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD", "password")
