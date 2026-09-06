@@ -25,6 +25,9 @@ export default function SmsLayout({ children }: { children: React.ReactNode }) {
     if (token && user) {
       try {
         const parsedUser = JSON.parse(user);
+        if (!parsedUser || !parsedUser.user_id) {
+          throw new Error("Invalid session data");
+        }
         const isSuperOrDeptAdmin = parsedUser.role === 'ADMIN' || parsedUser.is_admin;
         if (!isSuperOrDeptAdmin) {
           if (pathname === '/sms/departments') {
@@ -36,15 +39,18 @@ export default function SmsLayout({ children }: { children: React.ReactNode }) {
             return;
           }
         }
+        setIsAuthenticated(true);
+        setIsChecking(false);
+        return;
       } catch (e) {}
-
-      setIsAuthenticated(true);
-      setIsChecking(false);
-    } else {
-      setIsAuthenticated(false);
-      setIsChecking(false);
-      router.replace('/sms/login');
     }
+
+    // Purge bad or missing SMS session data and redirect
+    localStorage.removeItem('multiutility_token');
+    localStorage.removeItem('multiutility_user');
+    setIsAuthenticated(false);
+    setIsChecking(false);
+    router.replace('/sms/login');
   }, [pathname, router]);
 
   if (pathname !== '/sms/login' && !isAuthenticated) {
