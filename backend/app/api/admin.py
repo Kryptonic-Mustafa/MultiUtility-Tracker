@@ -35,11 +35,11 @@ DEFAULT_MODULES = [
         "badge": "Module #2",
         "description": "Employee onboarding, salary slip generation, leave approvals, performance evaluations, and tax calculations.",
         "icon": "Briefcase",
-        "enabled": False,
+        "enabled": True,
         "order": 2,
-        "href": "#",
+        "href": "/hr",
         "show_nav_top": True,
-        "show_nav_bottom": False
+        "show_nav_bottom": True
     },
     {
         "id": "library",
@@ -48,11 +48,11 @@ DEFAULT_MODULES = [
         "badge": "Module #3",
         "description": "Book cataloging, barcode scanning, loan tracking, overdue fine calculation, and digital resource access.",
         "icon": "BookOpen",
-        "enabled": False,
+        "enabled": True,
         "order": 3,
-        "href": "#",
+        "href": "/library",
         "show_nav_top": True,
-        "show_nav_bottom": False
+        "show_nav_bottom": True
     },
     {
         "id": "hostel",
@@ -61,11 +61,11 @@ DEFAULT_MODULES = [
         "badge": "Module #4",
         "description": "Dormitory bed allocation, mess bill management, bus route tracking, and visitor pass issuance.",
         "icon": "Bus",
-        "enabled": False,
+        "enabled": True,
         "order": 4,
-        "href": "#",
-        "show_nav_top": False,
-        "show_nav_bottom": False
+        "href": "/hostel",
+        "show_nav_top": True,
+        "show_nav_bottom": True
     }
 ]
 
@@ -89,7 +89,7 @@ def get_system_config():
                         "icon": m.icon,
                         "enabled": bool(m.enabled),
                         "order": m.display_order,
-                        "href": m.href,
+                        "href": m.href or f"/{m.id}",
                         "show_nav_top": bool(m.show_nav_top),
                         "show_nav_bottom": bool(m.show_nav_bottom)
                     })
@@ -114,6 +114,7 @@ def update_system_config(config: dict):
             # Update Modules
             if "modules" in config and isinstance(config["modules"], list):
                 for idx, mod in enumerate(config["modules"]):
+                    db_target = mod.get("db_name", f"module_{mod['id']}")
                     m_row = master_db.query(SystemModuleModel).filter(SystemModuleModel.id == mod.get("id")).first()
                     if m_row:
                         m_row.title = mod.get("title", m_row.title)
@@ -123,19 +124,33 @@ def update_system_config(config: dict):
                         m_row.display_order = mod.get("order", idx + 1)
                         if "db_name" in mod:
                             m_row.db_name = mod["db_name"]
+                        if "href" in mod and mod["href"] != "#":
+                            m_row.href = mod["href"]
+                        else:
+                            m_row.href = f"/{mod['id']}"
                     else:
                         new_m = SystemModuleModel(
                             id=mod["id"],
                             title=mod.get("title", mod["id"]),
-                            db_name=mod.get("db_name", f"module_{mod['id']}"),
+                            db_name=db_target,
                             badge=mod.get("badge", "Module"),
                             description=mod.get("description", ""),
                             icon=mod.get("icon", "Layers"),
                             enabled=1 if mod.get("enabled") else 0,
                             display_order=mod.get("order", idx + 1),
-                            href=mod.get("href", f"/{mod['id']}")
+                            href=mod.get("href") if (mod.get("href") and mod.get("href") != "#") else f"/{mod['id']}"
                         )
                         master_db.add(new_m)
+
+                    # Auto-provision physical DB & base schemas if enabled
+                    if mod.get("enabled"):
+                        try:
+                            from backend.app.core.db_manager import ensure_database_exists, get_db_engine, Base
+                            ensure_database_exists(db_target)
+                            mod_engine = get_db_engine(db_target)
+                            Base.metadata.create_all(bind=mod_engine)
+                        except Exception as p_err:
+                            print(f"Note on auto-provisioning physical DB {db_target}: {p_err}")
 
             # Update Global Config
             cfg_row = master_db.query(GlobalConfigModel).first()

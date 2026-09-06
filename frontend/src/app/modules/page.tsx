@@ -21,9 +21,9 @@ const DEFAULT_MODULES = [
     badge: 'Module #2',
     description: 'Employee onboarding, salary slip generation, leave approvals, performance evaluations, and tax calculations.',
     icon: 'Briefcase',
-    enabled: false,
+    enabled: true,
     order: 2,
-    href: '#'
+    href: '/hr'
   },
   {
     id: 'library',
@@ -31,9 +31,9 @@ const DEFAULT_MODULES = [
     badge: 'Module #3',
     description: 'Book cataloging, barcode scanning, loan tracking, overdue fine calculation, and digital resource access.',
     icon: 'BookOpen',
-    enabled: false,
+    enabled: true,
     order: 3,
-    href: '#'
+    href: '/library'
   },
   {
     id: 'hostel',
@@ -41,9 +41,9 @@ const DEFAULT_MODULES = [
     badge: 'Module #4',
     description: 'Dormitory bed allocation, mess bill management, bus route tracking, and visitor pass issuance.',
     icon: 'Bus',
-    enabled: false,
+    enabled: true,
     order: 4,
-    href: '#'
+    href: '/hostel'
   }
 ];
 
