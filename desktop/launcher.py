@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import socket
+import tempfile
 import subprocess
 import webbrowser
 import signal
@@ -9,6 +10,7 @@ import atexit
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
+USER_DATA_DIR = os.path.join(tempfile.gettempdir(), "multiutility_desktop_profile")
 
 backend_proc = None
 frontend_proc = None
@@ -70,7 +72,7 @@ def cleanup():
         except Exception:
             pass
 
-    # Ensure all background processes on ports 8000 & 3000 are terminated
+    # Terminate listener processes on ports 8000 & 3000 cleanly
     kill_processes_on_ports([8000, 3000])
     print("👋 All desktop services and windows terminated cleanly.")
 
@@ -85,6 +87,8 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 def launch_app_window(url):
     global window_proc
+    os.makedirs(USER_DATA_DIR, exist_ok=True)
+
     chrome_paths = [
         r"C:\Program Files\Google\Chrome\Application\chrome.exe",
         r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
@@ -95,8 +99,15 @@ def launch_app_window(url):
     for path in chrome_paths:
         if os.path.exists(path):
             try:
-                window_proc = subprocess.Popen([path, f"--app={url}"])
-                print(f"🖥️ Application window launched with {os.path.basename(path)}")
+                cmd = [
+                    path,
+                    f"--app={url}",
+                    f"--user-data-dir={USER_DATA_DIR}",
+                    "--no-first-run",
+                    "--no-default-browser-check"
+                ]
+                window_proc = subprocess.Popen(cmd)
+                print(f"🖥️ Standalone Desktop App Window launched with {os.path.basename(path)}")
                 return window_proc
             except Exception as e:
                 print(f"Warning: Failed to launch browser at {path}: {e}")
@@ -139,19 +150,26 @@ def main():
         time.sleep(1)
 
     if ready:
-        print("✅ Web UI is online! Launching application window...")
+        print("✅ Web UI is online! Launching standalone application window...")
         time.sleep(1)
         launch_app_window(target_url)
     else:
         print("⚠️ Timeout waiting for Web UI. Opening fallback browser...")
         webbrowser.open(target_url)
 
-    # 4. Monitor loop: Terminate cleanly if window is closed or Ctrl+C is pressed
+    # 4. Monitor loop: Exit cleanly if desktop window is closed or Ctrl+C is pressed
+    start_time = time.time()
     try:
         while True:
-            if window_proc and window_proc.poll() is not None:
-                print("\n🚪 Desktop application window closed by user. Shutting down system...")
-                break
+            if window_proc:
+                poll_res = window_proc.poll()
+                if poll_res is not None:
+                    # Only treat as user-closed if window ran for more than 2.5 seconds
+                    if time.time() - start_time > 2.5:
+                        print("\n🚪 Desktop application window closed by user. Terminating all services...")
+                        break
+                    else:
+                        window_proc = None
             time.sleep(0.5)
     except KeyboardInterrupt:
         pass
