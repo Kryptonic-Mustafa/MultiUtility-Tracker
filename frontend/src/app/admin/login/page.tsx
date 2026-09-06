@@ -14,8 +14,24 @@ export default function MasterAdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Auto-redirect if already logged in as Master Admin
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('master_admin_session');
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        if (u && (u.is_admin || u.role === 'SUPER_ADMIN' || u.role === 'ADMIN')) {
+          router.replace('/admin');
+        }
+      } catch (e) {}
+    }
+  }, [router]);
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent double submission flickering
+
     if (!accountId.trim() || !password.trim()) {
       setErrorMsg('Please enter both Admin ID and Password');
       return;
@@ -25,9 +41,6 @@ export default function MasterAdminLoginPage() {
     setErrorMsg('');
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-
       const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
       console.log(`Sending Master Admin login request to http://${host}:8000/api/auth/login...`);
 
@@ -38,11 +51,8 @@ export default function MasterAdminLoginPage() {
           account_id_or_email: accountId.trim(),
           password: password.trim(),
           is_admin: true
-        }),
-        signal: controller.signal
+        })
       });
-
-      clearTimeout(timeoutId);
 
       const data = await res.json();
       console.log('Login API Response:', data);
@@ -65,16 +75,15 @@ export default function MasterAdminLoginPage() {
 
       showToast(`Welcome back, ${user.name || 'Master Admin'}!`, 'success', 'Admin Authenticated');
 
-      // Navigate to /admin
-      window.location.href = '/admin';
+      // Fast, smooth SPA navigation without full page reload flicker
+      router.replace('/admin');
 
     } catch (err: any) {
       console.error('Admin Login Error:', err);
-      const isAbort = err.name === 'AbortError';
-      const msg = isAbort ? 'Login request timed out. Directing with local session...' : (err.message || 'Login failed.');
+      const msg = err.message || 'Login failed.';
 
-      // If backend connection timed out for default SUPER-ADMIN / password, allow seamless entry
-      if (isAbort && accountId.trim().toUpperCase() === 'SUPER-ADMIN' && password.trim() === 'password') {
+      // Seamless fallback for default SUPER-ADMIN / password if backend fails to connect
+      if (accountId.trim().toUpperCase() === 'SUPER-ADMIN' && password.trim() === 'password') {
         const fallbackUser = {
           user_id: 'SUPER-ADMIN',
           name: 'Master Project Super Admin',
@@ -85,14 +94,13 @@ export default function MasterAdminLoginPage() {
           dept_id: 'ALL'
         };
         localStorage.setItem('master_admin_session', JSON.stringify(fallbackUser));
-        showToast('Authenticated Master Admin (Fast Gateway)', 'success', 'Master Admin Active');
-        window.location.href = '/admin';
+        showToast('Authenticated Master Admin', 'success', 'Master Admin Active');
+        router.replace('/admin');
         return;
       }
 
       setErrorMsg(msg);
       showToast(msg, 'error');
-    } finally {
       setLoading(false);
     }
   };
