@@ -4,9 +4,16 @@ import time
 import socket
 import subprocess
 import webbrowser
+import signal
+import atexit
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
+
+backend_proc = None
+frontend_proc = None
+window_proc = None
+is_cleaning_up = False
 
 def is_port_in_use(port: int) -> bool:
     """Checks if a TCP port is currently active on localhost."""
@@ -14,12 +21,71 @@ def is_port_in_use(port: int) -> bool:
         s.settimeout(0.5)
         return s.connect_ex(('127.0.0.1', port)) == 0
 
-def focus_or_open_browser(url: str):
-    """
-    Brings existing browser window to focus and performs hard refresh (Ctrl+Shift+R / Ctrl+F5),
-    bypassing browser cache and preventing creation of duplicate tabs.
-    Opens a browser only if not already open.
-    """
+def kill_process_tree(pid: int):
+    if not pid:
+        return
+    try:
+        if os.name == 'nt':
+            subprocess.run(['taskkill', '/F', '/T', '/PID', str(pid)], capture_output=True)
+        else:
+            os.kill(pid, signal.SIGTERM)
+    except Exception:
+        pass
+
+def kill_processes_on_ports(ports):
+    if os.name == 'nt':
+        for port in ports:
+            try:
+                res = subprocess.run(['netstat', '-ano'], capture_output=True, text=True)
+                for line in res.stdout.splitlines():
+                    if f":{port} " in line and "LISTENING" in line:
+                        parts = line.strip().split()
+                        pid = parts[-1]
+                        if pid.isdigit() and int(pid) != os.getpid():
+                            subprocess.run(['taskkill', '/F', '/PID', pid], capture_output=True)
+            except Exception:
+                pass
+
+def cleanup():
+    global is_cleaning_up, backend_proc, frontend_proc, window_proc
+    if is_cleaning_up:
+        return
+    is_cleaning_up = True
+    print("\n🛑 Shutting down MultiUtility Tracker services...")
+
+    if window_proc and window_proc.poll() is None:
+        try:
+            kill_process_tree(window_proc.pid)
+        except Exception:
+            pass
+
+    if backend_proc and backend_proc.poll() is None:
+        try:
+            kill_process_tree(backend_proc.pid)
+        except Exception:
+            pass
+
+    if frontend_proc and frontend_proc.poll() is None:
+        try:
+            kill_process_tree(frontend_proc.pid)
+        except Exception:
+            pass
+
+    # Ensure all background processes on ports 8000 & 3000 are terminated
+    kill_processes_on_ports([8000, 3000])
+    print("👋 All services and windows terminated cleanly. Have a great day!")
+
+atexit.register(cleanup)
+
+def signal_handler(sig, frame):
+    cleanup()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+def focus_or_launch_app(url: str):
+    global window_proc
     if os.name == 'nt':
         ps_script = """
         $wshell = New-Object -ComObject WScript.Shell
@@ -46,20 +112,35 @@ def focus_or_open_browser(url: str):
             )
             if "REUSED" in res.stdout:
                 print("🌐 Focused existing browser window & triggered Hard Cache Refresh (Ctrl+Shift+R)!")
-                return
+                return None
         except Exception:
             pass
 
-    print(f"🌐 Opening web browser: {url}")
+    chrome_paths = [
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        os.path.expanduser(r"~\AppData\Local\Google\Chrome\Application\chrome.exe"),
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    ]
+    for path in chrome_paths:
+        if os.path.exists(path):
+            try:
+                window_proc = subprocess.Popen([path, f"--app={url}"])
+                print(f"🖥️ Launched application window using {os.path.basename(path)}")
+                return window_proc
+            except Exception:
+                pass
+
+    print(f"🌐 Opening default web browser: {url}")
     webbrowser.open(url)
+    return None
 
 def main():
+    global backend_proc, frontend_proc, window_proc
     print("=" * 70)
     print(" 🚀 MultiUtility Tracker - Smart One-Click System Launcher")
     print("=" * 70)
-
-    backend_proc = None
-    frontend_proc = None
 
     # 1. Check / Start FastAPI Backend
     if is_port_in_use(8000):
@@ -86,7 +167,7 @@ def main():
         print("🔹 [3/3] Services verified active.")
 
     target_url = "http://localhost:3000/"
-    focus_or_open_browser(target_url)
+    focus_or_launch_app(target_url)
 
     print("\n" + "=" * 70)
     print(" ✅ MultiUtility Tracker is live and ready!")
@@ -95,31 +176,18 @@ def main():
     print(" 📍 SMS Workspace Login      : http://localhost:3000/sms/login")
     print(" 📍 Backend API Docs         : http://localhost:8000/docs")
     print("=" * 70)
-    print(" 💡 Press CTRL+C in this window to stop services when finished.\n")
+    print(" 💡 Closing application window or pressing CTRL+C terminates all services cleanly.\n")
 
     try:
-        if backend_proc:
-            backend_proc.wait()
-        if frontend_proc:
-            frontend_proc.wait()
-        
-        # If both services were already running, keep launcher interactive
-        if not backend_proc and not frontend_proc:
-            while True:
-                time.sleep(1)
+        while True:
+            if window_proc and window_proc.poll() is not None:
+                print("\n🚪 Desktop application window closed by user. Terminating all services...")
+                break
+            time.sleep(0.5)
     except KeyboardInterrupt:
-        print("\n🛑 Shutting down managed services...")
-        if backend_proc:
-            try:
-                backend_proc.terminate()
-            except Exception:
-                pass
-        if frontend_proc:
-            try:
-                frontend_proc.terminate()
-            except Exception:
-                pass
-        print("👋 All services stopped cleanly. Have a great day!")
+        pass
+    finally:
+        cleanup()
 
 if __name__ == "__main__":
     main()
