@@ -94,7 +94,7 @@ def init_master_database():
             )
             db.add(master_admin)
 
-        # Seed Default System Modules
+        # Seed Default System Modules (all active by default with valid workspace links)
         default_modules = [
             {
                 "id": "sms",
@@ -116,11 +116,11 @@ def init_master_database():
                 "badge": "Module #2",
                 "description": "Employee onboarding, salary slip generation, leave approvals, performance evaluations, and tax calculations.",
                 "icon": "Briefcase",
-                "enabled": 0,
+                "enabled": 1,
                 "display_order": 2,
-                "href": "#",
+                "href": "/hr",
                 "show_nav_top": 1,
-                "show_nav_bottom": 0
+                "show_nav_bottom": 1
             },
             {
                 "id": "library",
@@ -129,11 +129,11 @@ def init_master_database():
                 "badge": "Module #3",
                 "description": "Book cataloging, barcode scanning, loan tracking, overdue fine calculation, and digital resource access.",
                 "icon": "BookOpen",
-                "enabled": 0,
+                "enabled": 1,
                 "display_order": 3,
-                "href": "#",
+                "href": "/library",
                 "show_nav_top": 1,
-                "show_nav_bottom": 0
+                "show_nav_bottom": 1
             },
             {
                 "id": "hostel",
@@ -142,11 +142,11 @@ def init_master_database():
                 "badge": "Module #4",
                 "description": "Dormitory bed allocation, mess bill management, bus route tracking, and visitor pass issuance.",
                 "icon": "Bus",
-                "enabled": 0,
+                "enabled": 1,
                 "display_order": 4,
-                "href": "#",
-                "show_nav_top": 0,
-                "show_nav_bottom": 0
+                "href": "/hostel",
+                "show_nav_top": 1,
+                "show_nav_bottom": 1
             }
         ]
 
@@ -155,6 +155,19 @@ def init_master_database():
             if not mod:
                 new_mod = SystemModuleModel(**mod_data)
                 db.add(new_mod)
+            else:
+                # Update existing module status to active & update href
+                mod.enabled = 1
+                mod.href = mod_data["href"]
+                mod.db_name = mod_data["db_name"]
+
+            # Provision physical database and base schemas for each module
+            try:
+                ensure_database_exists(mod_data["db_name"])
+                mod_engine = get_db_engine(mod_data["db_name"])
+                Base.metadata.create_all(bind=mod_engine)
+            except Exception as dberr:
+                logger.warning(f"Note on provisioning physical DB {mod_data['db_name']}: {dberr}")
 
         # Seed Global Config
         cfg = db.query(GlobalConfigModel).first()
