@@ -47,7 +47,6 @@ export default function MasterAdminPage() {
   const [editFormData, setEditFormData] = useState<any>({});
   const [savingRow, setSavingRow] = useState(false);
 
-  // Auth Check for Master Admin
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -57,10 +56,14 @@ export default function MasterAdminPage() {
         const u = JSON.parse(saved);
         if (u && (u.is_admin || u.role === 'SUPER_ADMIN' || u.role === 'ADMIN')) {
           setCurrentUser(u);
+          return;
         }
       } catch (e) {}
     }
-  }, []);
+
+    // Unauthenticated access -> redirect directly to Master Admin Login
+    router.replace('/admin/login');
+  }, [router]);
 
   const handleLogout = () => {
     confirmAction({
