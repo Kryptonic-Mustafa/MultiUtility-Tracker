@@ -160,17 +160,38 @@ export default function MasterAdminPage() {
     }
   }, [activeTab, selectedDb, selectedTable]);
 
-  // Handle Module Toggle & Ordering
-  const handleToggleModule = (moduleId: string) => {
+  // Handle Module Toggle & Ordering with instant Master DB persistence
+  const handleToggleModule = async (moduleId: string) => {
     if (!config) return;
     const updatedModules = config.modules.map((m: any) =>
       m.id === moduleId ? { ...m, enabled: !m.enabled } : m
     );
     const updatedConfig = { ...config, modules: updatedModules };
     setConfig(updatedConfig);
+
+    // Auto-persist change directly to Master DB backend
+    try {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/admin/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      });
+      if (res.ok) {
+        const targetMod = updatedModules.find((m: any) => m.id === moduleId);
+        showToast(
+          `Module '${targetMod?.title}' is now ${targetMod?.enabled ? 'ACTIVE' : 'DISABLED'} in Master DB!`,
+          targetMod?.enabled ? 'success' : 'info',
+          'Module Status Updated'
+        );
+      } else {
+        showToast('Failed to persist status change to Master DB', 'error');
+      }
+    } catch (e: any) {
+      showToast(e.message || 'Error persisting module status', 'error');
+    }
   };
 
-  const handleMoveModule = (index: number, direction: 'UP' | 'DOWN') => {
+  const handleMoveModule = async (index: number, direction: 'UP' | 'DOWN') => {
     if (!config) return;
     const newModules = [...config.modules];
     const targetIndex = direction === 'UP' ? index - 1 : index + 1;
@@ -183,7 +204,20 @@ export default function MasterAdminPage() {
     // Update order indexes
     newModules.forEach((m, idx) => (m.order = idx + 1));
 
-    setConfig({ ...config, modules: newModules });
+    const updatedConfig = { ...config, modules: newModules };
+    setConfig(updatedConfig);
+
+    // Auto-persist order change directly to Master DB backend
+    try {
+      await fetch(`http://${window.location.hostname}:8000/api/admin/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      });
+      showToast('Module display order updated in Master DB', 'success', 'Order Saved');
+    } catch (e) {
+      console.error('Error auto-saving config after reorder:', e);
+    }
   };
 
   const handleSaveConfig = async () => {
