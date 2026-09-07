@@ -29,6 +29,12 @@ tmp/
 temp/
 scratch/
 
+# Markdown, Text & Batch script files
+*.md
+*.txt
+*.bat
+!backend/requirements.txt
+
 # Node & Next.js build outputs
 node_modules/
 frontend/node_modules/
