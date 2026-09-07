@@ -162,7 +162,60 @@ When modifying this repository, **you must strictly adhere to the following rule
 
 ---
 
-## 7. Future Scope & Roadmap
+## 8. How to Execute & Run the System
+
+### Option A: One-Click Smart System Launcher (Recommended)
+Double click `start.bat` or run:
+```bash
+python launcher.py
+```
+**What launcher does automatically**:
+1. Checks port `8000` — if inactive, starts FastAPI backend via `uvicorn backend.app.main:app --reload --port 8000`.
+2. Checks port `3000` — if inactive, starts Next.js frontend via `npm run dev` in `frontend/`.
+3. Auto-seeds all module databases on startup (`student_tracker.db`, `module_hr.db`, `module_library.db`, `module_hostel.db`, `multiutility_master.db`).
+4. Focuses existing browser window or launches default web browser at `http://localhost:3000/`.
+
+### Option B: Manual Execution
+If launching services individually:
+- **Backend Service**:
+  ```bash
+  python -m uvicorn backend.app.main:app --reload --port 8000
+  ```
+  *Backend Swagger API Docs available at*: `http://localhost:8000/docs`
+- **Frontend Service**:
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+  *Frontend accessible at*: `http://localhost:3000/`
+
+---
+
+## 9. How to Work Around & Test the System
+
+### System Key URL Endpoints
+- **Universal Gateway Hub**: `http://localhost:3000/modules`
+- **SMS Workspace**: `http://localhost:3000/sms` | Login: `http://localhost:3000/sms/login` | Profile: `http://localhost:3000/sms/profile`
+- **HR Workspace**: `http://localhost:3000/hr` | Login: `http://localhost:3000/hr/login` | Profile: `http://localhost:3000/hr/profile`
+- **Library Workspace**: `http://localhost:3000/library` | Login: `http://localhost:3000/library/login` | Profile: `http://localhost:3000/library/profile`
+- **Hostel Workspace**: `http://localhost:3000/hostel` | Login: `http://localhost:3000/hostel/login` | Profile: `http://localhost:3000/hostel/profile`
+- **Master Admin Panel**: `http://localhost:3000/admin` | Login: `http://localhost:3000/admin/login`
+
+### Pre-Seeded Universal Credentials (`TEST_ACCOUNTS.txt`)
+All module DBs are auto-seeded with test accounts:
+- **Universal User Email**: `mustafa@gmail.com`
+- **Password**: `password123`
+- **Role Verification across gateways**:
+  - Log into `/sms/login` -> Authenticates in `student_tracker.db` -> Role: `STUDENT` (`STU-503`).
+  - Log into `/hr/login` -> Authenticates in `module_hr.db` -> Role: `HR_MANAGER` (`EMP-503`).
+  - Log into `/library/login` -> Authenticates in `module_library.db` -> Role: `LIBRARIAN` (`LIB-503`).
+  - Log into `/hostel/login` -> Authenticates in `module_hostel.db` -> Role: `HOSTEL_WARDEN` (`HST-503`).
+- **Master Admin Credentials**:
+  - Email: `admin@multiutility.com` | Password: `admin` | Role: `SUPER_ADMIN` (`ADMIN-001`).
+
+---
+
+## 10. Future Scope & Roadmap
 
 1. **Finance & Fees Management Module (`/finance`)**: Fee structure setup, student fee receipts, online payment gateway simulator, penalty tracking.
 2. **Exams & Grading Governance Module (`/exams`)**: Report cards, GPA calculator, exam schedule timetables, answer key archive.
