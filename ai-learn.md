@@ -8,6 +8,11 @@
 
 **MultiUtility Tracker** (v1.0) is an enterprise-grade multi-tenant school & facility management ecosystem. It provides a central **Universal Module Gateway** (`/modules`) that seamlessly connects isolated, independent business modules.
 
+### Core Evolution & Project Genesis
+1. **Phase 1 — Student Attendance Tracking**: The project initially began as a standalone **Student Tracker** focused exclusively on student enrollment, kiosk-based attendance verification, and student records.
+2. **Phase 2 — Faculty & Staff Attendance Expansion**: The system was then expanded to track teachers, professors, and administrative staff attendance, adding department breakdowns and class attendance audit logs.
+3. **Phase 3 — MultiUtility Enterprise Ecosystem**: The scope was subsequently transformed into a modular **MultiUtility Platform**. The system was re-architected to host completely independent modules (HR & Payroll, Digital Library, Hostel & Fleet Logistics, dynamic custom modules, and a Master Admin Panel) each backed by isolated physical databases and distinct role-based authentication flows.
+
 ### Active Core Modules
 1. **SMS (Module #1)**: School Management System (Students, Faculty, Departments, Live Kiosk, Attendance Logs).
 2. **HR & Payroll (Module #2)**: Employee Governance, Headcount Metrics, Monthly Salary Slips, Leave Approvals.
